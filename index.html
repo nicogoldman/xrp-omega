@@ -10,6 +10,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='sans-serif' fill='%2300f3ff'>X</text></svg>">
 
     <style>
+        /* --- ESTÉTICA CYBERPUNK HIGH-END --- */
         :root {
             --void: #020204;
             --hologram: rgba(0, 243, 255, 0.05);
@@ -17,8 +18,7 @@
             --acid: #ccff00;
             --danger: #ff2a6d;
             --glass: rgba(10, 15, 20, 0.6);
-            --glass-border: rgba(0, 243, 255, 0.1);
-            --grid-line: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(0, 243, 255, 0.15);
         }
         
         * { box-sizing: border-box; outline: none; }
@@ -28,18 +28,21 @@
             background-color: var(--void); 
             color: var(--cyan); 
             font-family: 'Space Mono', monospace; 
-            overflow: hidden; /* Prevent scrollbars on full UI */
+            /* CORRECCIÓN DE SCROLL AQUI: */
+            overflow-x: hidden; /* Evita scroll lateral indeseado */
+            overflow-y: auto;   /* PERMITE scroll vertical si es necesario */
             background-image: radial-gradient(circle at 50% 50%, #0a0f1e 0%, #000 100%);
+            min-height: 100vh;
         }
 
-        /* SCANLINE & CRT EFFECT UPGRADE */
+        /* EFECTO CRT / SCANLINES */
         body::before {
-            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             z-index: 999; background-size: 100% 2px, 3px 100%; pointer-events: none;
         }
         
-        /* VIGNETTE */
+        /* VIÑETA CINEMÁTICA */
         body::after {
             content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: radial-gradient(circle, transparent 60%, black 100%);
@@ -49,32 +52,35 @@
         .layout { 
             max-width: 1800px; margin: 0 auto; padding: 20px; 
             display: grid; grid-template-columns: 350px 1fr; gap: 20px; 
-            height: 100vh;
+            /* CORRECCIÓN: Altura mínima en lugar de fija */
+            min-height: 100vh; 
+            height: auto;
             position: relative; z-index: 10;
+            padding-bottom: 50px; /* Espacio extra al final para móviles */
         }
 
-        /* PANEL IZQUIERDO: COMANDOS */
+        /* PANEL DE CONTROL (IZQUIERDA) */
         .cyber-panel { 
             background: var(--glass); 
             border: 1px solid var(--glass-border); 
             padding: 25px; 
             border-radius: 4px; 
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             display: flex; flex-direction: column; gap: 20px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            box-shadow: 0 0 40px rgba(0,0,0,0.6);
+            height: fit-content; /* Para que no se estire infinitamente */
         }
 
         .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; position: relative; }
         .header::after {
             content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
-            width: 50px; height: 3px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan);
+            width: 60px; height: 2px; background: var(--cyan); box-shadow: 0 0 15px var(--cyan);
         }
 
-        .logo { font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -2px; color: white; text-shadow: 0 0 15px var(--cyan); }
+        .logo { font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -2px; color: white; text-shadow: 0 0 20px var(--cyan); }
         .logo span { color: var(--acid); font-size: 0.9rem; letter-spacing: 6px; display: block; margin-top: 5px; opacity: 0.9; }
 
-        .control-group { position: relative; }
         .control-group label { display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
         
         .cyber-input { 
@@ -95,9 +101,11 @@
             box-shadow: 0 0 20px rgba(0, 243, 255, 0.1); 
         }
 
-        /* TERMINAL INTELIGENTE */
+        /* TERMINAL DE LOGS */
         .terminal {
-            flex-grow: 1; background: rgba(5, 5, 5, 0.9); 
+            /* Ajuste para móvil: altura fija mínima */
+            min-height: 150px;
+            background: rgba(5, 5, 5, 0.95); 
             border: 1px solid #222; 
             padding: 15px; font-size: 0.75rem; 
             overflow: hidden;
@@ -108,17 +116,13 @@
         .terminal::before {
             content: "SYSTEM LOG // NODO-01"; position: absolute; top: 5px; right: 10px; font-size: 0.6rem; color: #444;
         }
-        .log-line { 
-            margin-bottom: 4px; 
-            padding-left: 10px;
-            opacity: 0; animation: fadeIn 0.2s forwards;
-        }
+        .log-line { margin-bottom: 4px; padding-left: 10px; opacity: 0; animation: fadeIn 0.3s forwards; }
         .log-line::before { content: ">"; margin-right: 8px; color: #555; }
         .log-line.ai { color: var(--acid); text-shadow: 0 0 5px rgba(204, 255, 0, 0.3); }
         .log-line.warn { color: var(--danger); }
         .log-line.normal { color: #aaa; }
 
-        /* VISUALIZADOR PRINCIPAL */
+        /* DASHBOARD PRINCIPAL */
         .main-deck { display: grid; grid-template-rows: auto 1fr auto; gap: 20px; }
 
         .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
@@ -127,22 +131,24 @@
             border: 1px solid var(--glass-border); 
             padding: 15px; text-align: center; 
             position: relative; overflow: hidden;
-            transition: transform 0.3s;
+            transition: background 0.3s;
         }
-        .metric-card:hover { background: rgba(255,255,255,0.04); }
+        .metric-card:hover { background: rgba(255,255,255,0.05); }
         .metric-card h3 { margin: 0; font-size: 0.65rem; color: #666; letter-spacing: 2px; text-transform: uppercase; }
         .metric-card .val { font-size: 1.6rem; font-weight: 700; margin-top: 10px; color: white; font-family: 'Syncopate'; }
         .metric-card .status { font-size: 0.6rem; color: var(--cyan); margin-top: 5px; opacity: 0.8; }
 
-        /* EL NÚCLEO (CANVAS) */
+        /* NÚCLEO VISUAL (CANVAS) */
         .singularity-container {
             position: relative; 
             border: 1px solid var(--glass-border);
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
             background: radial-gradient(circle, #0d121d 0%, #000 90%);
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
             border-radius: 2px;
+            /* Altura fija para el gráfico para asegurar visibilidad */
+            min-height: 400px;
         }
         canvas#nexus { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; opacity: 0.8; }
         
@@ -150,16 +156,16 @@
         .big-price { 
             font-size: 5rem; font-family: 'Syncopate'; font-weight: 700; color: white; 
             letter-spacing: -4px; line-height: 1;
-            text-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
+            text-shadow: 0 0 40px rgba(0, 243, 255, 0.3);
         }
         .sub-price { font-size: 1rem; color: var(--acid); letter-spacing: 8px; text-transform: uppercase; margin-bottom: 10px; }
         
         .connect-status {
-            margin-top: 10px; font-size: 0.7rem; letter-spacing: 2px;
-            display: inline-block; padding: 2px 8px; border: 1px solid #333; background: black;
+            margin-top: 15px; font-size: 0.7rem; letter-spacing: 2px;
+            display: inline-block; padding: 4px 10px; border: 1px solid #333; background: black;
         }
 
-        /* SIMULACIÓN DE RIQUEZA */
+        /* BARRA DE RIQUEZA */
         .wealth-bar {
             background: linear-gradient(90deg, rgba(10,20,15,0.9) 0%, rgba(5,10,5,1) 100%);
             border: 1px solid var(--acid); 
@@ -167,24 +173,38 @@
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 0 20px rgba(204, 255, 0, 0.1);
             position: relative; overflow: hidden;
+            /* Evitar que se rompa en pantallas muy pequeñas */
+            flex-wrap: wrap; 
+            gap: 15px;
         }
         .wealth-bar::before {
             content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(204,255,0,0.1), transparent);
-            animation: shine 5s infinite;
+            animation: shine 6s infinite;
         }
-        .wealth-total { font-size: 2.5rem; color: var(--acid); font-weight: 700; text-shadow: 0 0 15px rgba(204, 255, 0, 0.4); font-family: 'Syncopate'; }
+        .wealth-total { font-size: 2.5rem; color: var(--acid); font-weight: 700; text-shadow: 0 0 15px rgba(204, 255, 0, 0.4); font-family: 'Syncopate'; word-break: break-all; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
         
+        /* MEDIA QUERIES PARA MOVIL */
         @media (max-width: 1100px) { 
-            .layout { grid-template-columns: 1fr; height: auto; } 
+            .layout { grid-template-columns: 1fr; height: auto; display: flex; flex-direction: column; } 
             .metrics-grid { grid-template-columns: repeat(2, 1fr); } 
-            .singularity-container { height: 400px; } 
+            .singularity-container { height: 350px; min-height: 350px; } 
             .big-price { font-size: 3.5rem; }
+            .cyber-panel { order: 2; /* Poner panel abajo en movil si prefieres, o quitar esta linea */ }
+            .main-deck { order: 1; }
+        }
+        
+        @media (max-width: 600px) {
+            .big-price { font-size: 2.8rem; }
+            .wealth-total { font-size: 1.8rem; }
+            .wealth-bar { flex-direction: column; text-align: center; }
+            .metric-card .val { font-size: 1.2rem; }
         }
     </style>
+
 </head>
 <body>
 
