@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRP OMEGA | AI Interface</title>
+    <title>XRP OMEGA | Superior AI Interface</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     
@@ -12,106 +12,179 @@
     <style>
         :root {
             --void: #020204;
-            --hologram: rgba(0, 243, 255, 0.03);
+            --hologram: rgba(0, 243, 255, 0.05);
             --cyan: #00f3ff;
             --acid: #ccff00;
             --danger: #ff2a6d;
-            --glass: rgba(10, 15, 20, 0.7);
-            --border: rgba(255, 255, 255, 0.1);
+            --glass: rgba(10, 15, 20, 0.6);
+            --glass-border: rgba(0, 243, 255, 0.1);
+            --grid-line: rgba(255, 255, 255, 0.03);
         }
         
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; outline: none; }
 
         body { 
-            margin: 0; background-color: var(--void); color: var(--cyan); 
+            margin: 0; 
+            background-color: var(--void); 
+            color: var(--cyan); 
             font-family: 'Space Mono', monospace; 
-            overflow-x: hidden;
+            overflow: hidden; /* Prevent scrollbars on full UI */
             background-image: radial-gradient(circle at 50% 50%, #0a0f1e 0%, #000 100%);
         }
 
-        /* SCANLINE EFFECT */
-        body::after {
+        /* SCANLINE & CRT EFFECT UPGRADE */
+        body::before {
             content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
             z-index: 999; background-size: 100% 2px, 3px 100%; pointer-events: none;
         }
+        
+        /* VIGNETTE */
+        body::after {
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, transparent 60%, black 100%);
+            z-index: 998; pointer-events: none;
+        }
 
         .layout { 
-            max-width: 1600px; margin: 0 auto; padding: 20px; 
-            display: grid; grid-template-columns: 320px 1fr; gap: 20px; 
+            max-width: 1800px; margin: 0 auto; padding: 20px; 
+            display: grid; grid-template-columns: 350px 1fr; gap: 20px; 
             height: 100vh;
+            position: relative; z-index: 10;
         }
 
         /* PANEL IZQUIERDO: COMANDOS */
         .cyber-panel { 
-            background: var(--glass); border: 1px solid var(--border); 
-            padding: 20px; border-radius: 2px; backdrop-filter: blur(5px);
-            display: flex; flex-direction: column; gap: 25px;
+            background: var(--glass); 
+            border: 1px solid var(--glass-border); 
+            padding: 25px; 
+            border-radius: 4px; 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex; flex-direction: column; gap: 20px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
 
-        .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-        .logo { font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -2px; color: white; text-shadow: 0 0 20px var(--cyan); }
-        .logo span { color: var(--acid); font-size: 1rem; letter-spacing: 5px; display: block; margin-top: 5px; }
+        .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; position: relative; }
+        .header::after {
+            content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+            width: 50px; height: 3px; background: var(--cyan); box-shadow: 0 0 10px var(--cyan);
+        }
 
-        .control-group label { display: block; font-size: 0.7rem; color: #666; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .logo { font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -2px; color: white; text-shadow: 0 0 15px var(--cyan); }
+        .logo span { color: var(--acid); font-size: 0.9rem; letter-spacing: 6px; display: block; margin-top: 5px; opacity: 0.9; }
+
+        .control-group { position: relative; }
+        .control-group label { display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
         
         .cyber-input { 
-            background: rgba(0,0,0,0.5); border: 1px solid #333; color: white; 
-            padding: 12px; width: 100%; font-family: 'Space Mono'; font-size: 1.1rem; 
-            transition: 0.3s;
+            background: rgba(0,0,0,0.4); 
+            border: 1px solid #333; 
+            color: white; 
+            padding: 12px 15px; 
+            width: 100%; 
+            font-family: 'Space Mono'; 
+            font-size: 1.1rem; 
+            transition: all 0.3s ease;
+            border-left: 2px solid transparent;
         }
-        .cyber-input:focus { border-color: var(--cyan); outline: none; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
+        .cyber-input:focus { 
+            border-color: var(--cyan); 
+            border-left: 5px solid var(--cyan);
+            background: rgba(0, 243, 255, 0.05);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1); 
+        }
 
         /* TERMINAL INTELIGENTE */
         .terminal {
-            flex-grow: 1; background: #050505; border: 1px solid #333; 
-            padding: 15px; font-size: 0.75rem; overflow-y: hidden;
+            flex-grow: 1; background: rgba(5, 5, 5, 0.9); 
+            border: 1px solid #222; 
+            padding: 15px; font-size: 0.75rem; 
+            overflow: hidden;
             display: flex; flex-direction: column-reverse;
             border-left: 3px solid var(--acid);
+            position: relative;
         }
-        .log-line { margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px; }
-        .log-line.ai { color: var(--acid); }
+        .terminal::before {
+            content: "SYSTEM LOG // NODO-01"; position: absolute; top: 5px; right: 10px; font-size: 0.6rem; color: #444;
+        }
+        .log-line { 
+            margin-bottom: 4px; 
+            padding-left: 10px;
+            opacity: 0; animation: fadeIn 0.2s forwards;
+        }
+        .log-line::before { content: ">"; margin-right: 8px; color: #555; }
+        .log-line.ai { color: var(--acid); text-shadow: 0 0 5px rgba(204, 255, 0, 0.3); }
         .log-line.warn { color: var(--danger); }
-        .blink { animation: blink 1s infinite; }
+        .log-line.normal { color: #aaa; }
 
         /* VISUALIZADOR PRINCIPAL */
         .main-deck { display: grid; grid-template-rows: auto 1fr auto; gap: 20px; }
 
-        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
         .metric-card { 
-            background: rgba(255,255,255,0.02); border: 1px solid var(--border); 
-            padding: 15px; text-align: center; position: relative; overflow: hidden;
+            background: rgba(255,255,255,0.02); 
+            border: 1px solid var(--glass-border); 
+            padding: 15px; text-align: center; 
+            position: relative; overflow: hidden;
+            transition: transform 0.3s;
         }
-        .metric-card h3 { margin: 0; font-size: 0.7rem; color: #888; letter-spacing: 2px; }
-        .metric-card .val { font-size: 1.8rem; font-weight: 700; margin-top: 10px; color: white; }
-        .metric-card .status { font-size: 0.6rem; color: var(--cyan); margin-top: 5px; }
+        .metric-card:hover { background: rgba(255,255,255,0.04); }
+        .metric-card h3 { margin: 0; font-size: 0.65rem; color: #666; letter-spacing: 2px; text-transform: uppercase; }
+        .metric-card .val { font-size: 1.6rem; font-weight: 700; margin-top: 10px; color: white; font-family: 'Syncopate'; }
+        .metric-card .status { font-size: 0.6rem; color: var(--cyan); margin-top: 5px; opacity: 0.8; }
 
         /* EL NÚCLEO (CANVAS) */
         .singularity-container {
-            position: relative; border: 1px solid var(--border);
+            position: relative; 
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
             background: radial-gradient(circle, #0d121d 0%, #000 90%);
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
+            border-radius: 2px;
         }
-        canvas#nexus { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; }
+        canvas#nexus { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; opacity: 0.8; }
+        
         .center-data { z-index: 2; text-align: center; pointer-events: none; mix-blend-mode: screen; }
-        .big-price { font-size: 4rem; font-family: 'Syncopate'; font-weight: 700; color: white; letter-spacing: -2px; }
-        .sub-price { font-size: 1rem; color: var(--acid); letter-spacing: 5px; text-transform: uppercase; }
+        .big-price { 
+            font-size: 5rem; font-family: 'Syncopate'; font-weight: 700; color: white; 
+            letter-spacing: -4px; line-height: 1;
+            text-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
+        }
+        .sub-price { font-size: 1rem; color: var(--acid); letter-spacing: 8px; text-transform: uppercase; margin-bottom: 10px; }
+        
+        .connect-status {
+            margin-top: 10px; font-size: 0.7rem; letter-spacing: 2px;
+            display: inline-block; padding: 2px 8px; border: 1px solid #333; background: black;
+        }
 
         /* SIMULACIÓN DE RIQUEZA */
         .wealth-bar {
-            background: linear-gradient(90deg, rgba(0,0,0,1) 0%, rgba(20,40,20,1) 100%);
-            border: 1px solid var(--acid); padding: 20px;
+            background: linear-gradient(90deg, rgba(10,20,15,0.9) 0%, rgba(5,10,5,1) 100%);
+            border: 1px solid var(--acid); 
+            padding: 25px;
             display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 0 20px rgba(204, 255, 0, 0.1);
+            position: relative; overflow: hidden;
         }
-        .wealth-total { font-size: 2rem; color: var(--acid); font-weight: 700; text-shadow: 0 0 10px rgba(204, 255, 0, 0.3); }
+        .wealth-bar::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(204,255,0,0.1), transparent);
+            animation: shine 5s infinite;
+        }
+        .wealth-total { font-size: 2.5rem; color: var(--acid); font-weight: 700; text-shadow: 0 0 15px rgba(204, 255, 0, 0.4); font-family: 'Syncopate'; }
 
-        @keyframes blink { 50% { opacity: 0; } }
-        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; height: auto; } .metrics-grid { grid-template-columns: 1fr; } .singularity-container { height: 300px; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+        
+        @media (max-width: 1100px) { 
+            .layout { grid-template-columns: 1fr; height: auto; } 
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); } 
+            .singularity-container { height: 400px; } 
+            .big-price { font-size: 3.5rem; }
+        }
     </style>
-    <meta property="og:title" content="XRP OMEGA INTERFACE">
-<meta property="og:description" content="Protocolo de visualización neural para activos digitales.">
-<meta property="og:image" content="URL_DE_UNA_CAPTURA_DE_PANTALLA_DE_TU_WEB">
 </head>
 <body>
 
@@ -122,60 +195,69 @@
         </div>
 
         <div class="control-group">
-            <label>TUS ACTIVOS (XRP)</label>
+            <label><span>Tokens (XRP)</span> <span>STACK</span></label>
             <input type="number" id="userStack" class="cyber-input" value="1000">
         </div>
 
         <div class="control-group">
-            <label>PRECIO OBJETIVO DE SALIDA (USD)</label>
+            <label><span>Target Exit (USD)</span> <span>GOAL</span></label>
             <input type="number" id="targetPrice" class="cyber-input" value="5.00" step="0.10">
         </div>
 
         <div class="control-group">
-            <label>CONVERSOR LOCAL (USD -> TU MONEDA)</label>
-            <input type="number" id="localRate" class="cyber-input" value="1">
-            <small style="color:#555; font-size:0.6rem;">*Pon 1 para ver en Dólares</small>
+            <label><span>Divisa Base</span> <span>FIAT</span></label>
+            <select id="currencySelect" class="cyber-input">
+                <option value="USD">Dólar (USD)</option>
+                <option value="EUR">Euro (EUR)</option>
+                <option value="JPY">Yen (JPY)</option>
+                <option value="BRL">Real (BRL)</option>
+                <option value="ARS">Peso Argentino (ARS)</option>
+                <option value="MXN">Peso Mexicano (MXN)</option>
+            </select>
         </div>
 
         <div class="terminal" id="terminal">
-            <div class="log-line">> INICIANDO SISTEMA OMEGA...</div>
-            <div class="log-line ai">> LA IA ESTÁ LISTA PARA ENSEÑAR.</div>
-        </div>
+            </div>
     </div>
 
     <div class="main-deck">
         
         <div class="metrics-grid">
             <div class="metric-card">
-                <h3>VIBRACIÓN DE MERCADO</h3>
-                <div class="val" id="vibVal">---</div>
-                <div class="status" id="vibText">CALCULANDO</div>
+                <h3>VIBRACIÓN RSI</h3>
+                <div class="val" id="vibVal">--</div>
+                <div class="status" id="vibText">INIT</div>
             </div>
             <div class="metric-card">
-                <h3>PRESIÓN DE COMPRA</h3>
-                <div class="val" id="pressureVal">---</div>
-                <div class="status">VOLUMEN RELATIVO</div>
+                <h3>VOL 24H (USD)</h3>
+                <div class="val" id="pressureVal">--</div>
+                <div class="status">LIQUIDEZ</div>
             </div>
             <div class="metric-card">
-                <h3>TENDENCIA NEURAL</h3>
-                <div class="val" id="trendVal">---</div>
-                <div class="status" id="trendText">ANÁLISIS IA</div>
+                <h3>TENDENCIA IA</h3>
+                <div class="val" id="trendVal">--</div>
+                <div class="status" id="trendText">ANALIZANDO</div>
+            </div>
+            <div class="metric-card">
+                <h3>DOMINANCIA</h3>
+                <div class="val" id="dominanceVal">--%</div>
+                <div class="status">CAPITALIZACIÓN</div>
             </div>
         </div>
 
         <div class="singularity-container">
             <canvas id="nexus"></canvas>
             <div class="center-data">
-                <div class="sub-price">PRECIO ACTUAL</div>
+                <div class="sub-price">PRECIO DE MERCADO</div>
                 <div class="big-price" id="mainPrice">0.0000</div>
-                <div style="color: #666; font-size: 0.8rem;" id="connectStatus">CONECTANDO NODO...</div>
+                <div class="connect-status" id="connectStatus" style="color:#666">SISTEMA EN ESPERA</div>
             </div>
         </div>
 
         <div class="wealth-bar">
             <div>
-                <label style="color:white; font-size:0.7rem; display:block;">PROYECCIÓN DE PATRIMONIO FUTURO</label>
-                <small style="color:#666;">Basado en tu objetivo y tasa de cambio</small>
+                <label style="color:white; font-size:0.8rem; display:block; letter-spacing:1px; margin-bottom:5px;">PATRIMONIO PROYECTADO</label>
+                <small style="color:#888; font-family:'Space Mono';">Basado en objetivo y tipo de cambio real.</small>
             </div>
             <div class="wealth-total" id="wealthTotal">$0.00</div>
         </div>
@@ -183,21 +265,29 @@
 </div>
 
 <script>
-    // --- NÚCLEO OMEGA ---
-    
-    // Variables de Estado
+    /**
+     * OMEGA CORE v2.0
+     * Arquitectura mejorada para estabilidad y rendimiento.
+     */
+
+    // --- ESTADO INMUTABLE & REFERENCIAS ---
     const state = {
         price: 0.0,
         volume: 0.0,
-        rsi: 50,
-        isSimulation: false // Modo a prueba de fallos
+        change24h: 0.0,
+        currency: "USD",
+        fxRate: 1,
+        xrpMarketCap: 0,
+        totalMarketCap: 0,
+        isSimulation: false,
+        lastFetch: 0
     };
 
-    // Referencias DOM
     const els = {
         stack: document.getElementById('userStack'),
         target: document.getElementById('targetPrice'),
-        rate: document.getElementById('localRate'),
+        currency: document.getElementById('currencySelect'),
+        dominance: document.getElementById('dominanceVal'),
         wealth: document.getElementById('wealthTotal'),
         price: document.getElementById('mainPrice'),
         status: document.getElementById('connectStatus'),
@@ -209,206 +299,302 @@
         trendTxt: document.getElementById('trendText')
     };
 
-    // --- 1. LÓGICA DE SIMULACIÓN Y CONEXIÓN ---
-    
-    async function initConnection() {
-        log("ESTABLECIENDO ENLACE CUÁNTICO CON BINANCE...", "normal");
-        try {
-            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
-            if (!res.ok) throw new Error("Bloqueo de Red");
-            const data = await res.json();
-            
-            // Si conecta, usar datos reales
-            state.isSimulation = false;
-            updateData(parseFloat(data.lastPrice), parseFloat(data.volume), parseFloat(data.priceChangePercent));
-            log("CONEXIÓN SEGURA ESTABLECIDA.", "ai");
-            
-            // Loop Real
-            setInterval(fetchRealData, 5000);
-
-        } catch (e) {
-            // FALLBACK A MODO SIMULACIÓN (PARA QUE NO SE ROMPA LOCALMENTE)
-            state.isSimulation = true;
-            log("ERROR: API BLOQUEADA POR NAVEGADOR (CORS).", "warn");
-            log("ACTIVANDO PROTOCOLO 'GHOST' (SIMULACIÓN PREDICTIVA).", "ai");
-            
-            // Datos semilla para simulación
-            updateData(2.45, 150000000, 2.5);
-            
-            // Loop Simulado
-            setInterval(simulateData, 2000);
-        }
-    }
-
-    async function fetchRealData() {
-        if(state.isSimulation) return;
-        try {
-            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
-            const data = await res.json();
-            updateData(parseFloat(data.lastPrice), parseFloat(data.volume), parseFloat(data.priceChangePercent));
-        } catch(e) { console.log("Glitch en la matrix..."); }
-    }
-
-    function simulateData() {
-        // Genera movimiento browniano para que parezca vivo
-        const volatility = 0.005; 
-        const change = 1 + (Math.random() * volatility - (volatility/2));
-        const newPrice = state.price * change;
-        updateData(newPrice, state.volume, (Math.random() * 5) - 2);
-    }
-
-    // --- 2. CEREBRO ANALÍTICO ---
-
-    function updateData(price, volume, change24h) {
-        state.price = price;
-        state.volume = volume;
-        
-        // Actualizar UI Central
-        els.price.innerText = price.toFixed(4);
-        els.status.innerText = state.isSimulation ? "MODO SIMULACIÓN ACTIVO" : "DATOS EN VIVO";
-        els.status.style.color = state.isSimulation ? "#ff2a6d" : "#00f3ff";
-
-        // Reinventar Indicadores (Hacerlos comprensibles)
-        
-        // A. Vibración (RSI Simplificado)
-        // Simulamos un RSI basado en el cambio de precio para el demo
-        let fakeRSI = 50 + (change24h * 2); 
-        if (fakeRSI > 100) fakeRSI = 99; if (fakeRSI < 0) fakeRSI = 1;
-        
-        els.vib.innerText = fakeRSI.toFixed(0) + "%";
-        if(fakeRSI > 70) {
-            els.vib.style.color = "#ff2a6d";
-            els.vibTxt.innerText = "SOBRECALENTADO";
-            logOnce("ALERTA: El mercado está eufórico. Riesgo de corrección alto.", "warn");
-        } else if (fakeRSI < 30) {
-            els.vib.style.color = "#ccff00";
-            els.vibTxt.innerText = "ZONA FRÍA";
-            logOnce("OPORTUNIDAD: El precio está descontado. Zona de compra inteligente.", "ai");
-        } else {
-            els.vib.style.color = "white";
-            els.vibTxt.innerText = "ESTABLE";
-        }
-
-        // B. Presión
-        els.press.innerText = (volume / 1000000).toFixed(1) + "M";
-
-        // C. Tendencia
-        els.trend.innerText = change24h > 0 ? "ALCISTA" : "BAJISTA";
-        els.trend.style.color = change24h > 0 ? "#ccff00" : "#ff2a6d";
-        els.trendTxt.innerText = change24h > 0 ? "FUERZA COMPRADORA" : "FUERZA VENDEDORA";
-
-        calcWealth();
-        drawNexus(); // Actualizar canvas
-    }
-
-    // --- 3. CALCULADORA FINANCIERA (SIN RECURSIÓN) ---
-
-    function calcWealth() {
-        // Obtenemos valores directos, sin llamar a otras funciones complejas
-        const stack = parseFloat(els.stack.value) || 0;
-        const target = parseFloat(els.target.value) || 0;
-        const rate = parseFloat(els.rate.value) || 1;
-
-        const total = stack * target * rate;
-
-        // Formato moneda
-        const formatter = new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            maximumFractionDigits: 0
-        });
-        
-        // Si la tasa es 1 es USD, si no, asumimos moneda local genérica
-        let symbol = rate === 1 ? "$" : "¤";
-        els.wealth.innerText = symbol + formatter.format(total).replace("$", "");
-    }
-
-    // Listeners desacoplados (Evita Stack Overflow)
-    [els.stack, els.target, els.rate].forEach(input => {
-        input.addEventListener('input', calcWealth);
-    });
-
-    // --- 4. SISTEMA VISUAL NEXUS (CANVAS) ---
+    // --- 1. SISTEMA VISUAL NEXUS (CANVAS OPTIMIZADO) ---
     const canvas = document.getElementById('nexus');
     const ctx = canvas.getContext('2d');
     let width, height;
+    let particles = [];
 
-    function resize() {
+    function resizeCanvas() {
         width = canvas.width = canvas.parentElement.offsetWidth;
         height = canvas.height = canvas.parentElement.offsetHeight;
+        initParticles();
     }
-    window.addEventListener('resize', resize);
-    resize();
 
-    // Partículas
-    const particles = Array.from({length: 60}, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vel: Math.random() * 2 + 0.5,
-        size: Math.random() * 2
-    }));
+    function initParticles() {
+        particles = Array.from({length: 70}, () => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.5, // Movimiento orgánico lento
+            vy: (Math.random() - 0.5) * 0.5,
+            size: Math.random() * 2 + 0.5,
+            phase: Math.random() * Math.PI * 2
+        }));
+    }
 
     function drawNexus() {
-        // Fondo con rastro
-        ctx.fillStyle = 'rgba(13, 18, 29, 0.2)';
+        // Efecto de rastro (Fade out)
+        ctx.fillStyle = 'rgba(5, 8, 16, 0.15)'; // Fondo semitransparente para estelas
         ctx.fillRect(0, 0, width, height);
 
-        // Color basado en tendencia
-        const color = els.trend.innerText === "ALCISTA" ? '#ccff00' : '#ff2a6d';
+        // Definir color base según tendencia
+        const baseColor = state.change24h >= 0 ? 
+            {r: 204, g: 255, b: 0} : // Acid Green
+            {r: 255, g: 42, b: 109}; // Danger Red
 
-        particles.forEach(p => {
-            p.y -= p.vel;
-            if (p.y < 0) p.y = height;
+        particles.forEach((p, i) => {
+            // Actualizar posición
+            p.x += p.vx;
+            p.y += p.vy;
 
+            // Rebote suave en bordes
+            if (p.x < 0 || p.x > width) p.vx *= -1;
+            if (p.y < 0 || p.y > height) p.vy *= -1;
+
+            // Oscilación de tamaño (respiración)
+            p.phase += 0.05;
+            const currentSize = p.size + Math.sin(p.phase) * 0.5;
+
+            // Dibujar partícula
             ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = color;
+            ctx.arc(p.x, p.y, Math.max(0, currentSize), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, 0.8)`;
             ctx.fill();
-            
-            // Conexiones neuronales
-            particles.forEach(p2 => {
+
+            // Conexiones Neuronales (Optimización de distancia)
+            for (let j = i + 1; j < particles.length; j++) {
+                const p2 = particles[j];
                 const dx = p.x - p2.x;
                 const dy = p.y - p2.y;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if (dist < 60) {
+                const distSq = dx*dx + dy*dy;
+
+                // Solo dibujar si están cerca (distancia < 100px => distSq < 10000)
+                if (distSq < 10000) {
+                    const alpha = 1 - (distSq / 10000);
                     ctx.beginPath();
-                    ctx.strokeStyle = `rgba(255,255,255,${0.1 - dist/600})`;
+                    ctx.strokeStyle = `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${alpha * 0.4})`;
                     ctx.lineWidth = 0.5;
                     ctx.moveTo(p.x, p.y);
                     ctx.lineTo(p2.x, p2.y);
                     ctx.stroke();
                 }
-            });
+            }
         });
 
         requestAnimationFrame(drawNexus);
     }
-    // Iniciar animación loop
-    drawNexus();
 
+    // --- 2. MOTOR DE DATOS & IA ---
 
-    // --- 5. LOG INTELIGENTE ---
-    let msgCache = "";
+    async function initSystem() {
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        drawNexus();
+
+        log("INICIANDO PROTOCOLO OMEGA v2.0...", "normal");
+        await new Promise(r => setTimeout(r, 600)); // Efecto dramático
+        log("SINCRONIZANDO NODOS DE MERCADO...", "ai");
+        
+        await fetchFX(state.currency); // Obtener cambio inicial
+        fetchMarketData(); // Datos globales
+        startDataStream(); // Datos en vivo
+    }
+
+    async function startDataStream() {
+        try {
+            await fetchPrice();
+            // Intervalo principal de 5 segundos
+            setInterval(fetchPrice, 5000); 
+            setInterval(fetchMarketData, 60000); // Market cap cada minuto
+        } catch (e) {
+            log("FALLO CRÍTICO EN ENLACE API. ACTIVANDO SIMULACIÓN.", "warn");
+            state.isSimulation = true;
+            simulateDataStream();
+        }
+    }
+
+    async function fetchPrice() {
+        if (state.isSimulation) return;
+        
+        try {
+            // Usamos Binance API pública
+            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
+            if (!res.ok) throw new Error("API Limit");
+            const data = await res.json();
+            
+            updateDashboard(
+                parseFloat(data.lastPrice), 
+                parseFloat(data.quoteVolume), 
+                parseFloat(data.priceChangePercent)
+            );
+
+            els.status.innerText = "CONEXIÓN SEGURA: BINANCE";
+            els.status.style.color = "#00f3ff";
+            els.status.style.borderColor = "#00f3ff";
+
+        } catch (e) {
+            console.warn("API Error, cambiando a simulación temporal.");
+            state.isSimulation = true;
+            simulateDataStream();
+        }
+    }
+
+    // Modo Fallback (Ghost Protocol)
+    function simulateDataStream() {
+        els.status.innerText = "MODO PREDICTIVO (SIMULACIÓN)";
+        els.status.style.color = "#ff2a6d";
+        els.status.style.borderColor = "#ff2a6d";
+        
+        if(state.price === 0) updateDashboard(2.45, 500000000, 2.5); // Seed data
+
+        setInterval(() => {
+            if (!state.isSimulation) return;
+            // Movimiento aleatorio coherente
+            const volatility = 0.008; 
+            const noise = 1 + (Math.random() * volatility - (volatility/2));
+            const newPrice = state.price * noise;
+            const newChange = state.change24h + (Math.random() - 0.5);
+            
+            updateDashboard(newPrice, state.volume, newChange);
+        }, 2000);
+    }
+
+    // --- 3. ACTUALIZACIÓN UI ---
+
+    function updateDashboard(price, volume, changePerc) {
+        state.price = price;
+        state.volume = volume;
+        state.change24h = changePerc;
+
+        // A. Precio Principal
+        const localPrice = price * state.fxRate;
+        const currencySymbol = getCurrencySymbol(state.currency);
+        
+        // Animación numérica simple si cambia drásticamente
+        els.price.innerText = `${currencySymbol} ${localPrice.toFixed(4)}`;
+
+        // B. Indicadores
+        // RSI Simulado (La API pública no da RSI directo, lo inferimos de la volatilidad)
+        let rsi = 50 + (changePerc * 2.5);
+        rsi = Math.max(10, Math.min(90, rsi)); // Clamp entre 10 y 90
+        
+        els.vib.innerText = rsi.toFixed(0);
+        
+        if (rsi > 70) {
+            els.vib.style.color = "#ff2a6d"; // Rojo
+            els.vibTxt.innerText = "SOBRECOMPRA";
+        } else if (rsi < 30) {
+            els.vib.style.color = "#ccff00"; // Verde Acido
+            els.vibTxt.innerText = "SOBREVENTA";
+        } else {
+            els.vib.style.color = "white";
+            els.vibTxt.innerText = "NEUTRAL";
+        }
+
+        // Volumen formateado
+        els.press.innerText = formatCompactNumber(volume * state.fxRate);
+
+        // Tendencia
+        if (changePerc > 0) {
+            els.trend.innerText = "ALCISTA";
+            els.trend.style.color = "#ccff00";
+            els.trendTxt.innerText = `+${changePerc.toFixed(2)}% FUERZA`;
+        } else {
+            els.trend.innerText = "BAJISTA";
+            els.trend.style.color = "#ff2a6d";
+            els.trendTxt.innerText = `${changePerc.toFixed(2)}% CORRECCIÓN`;
+        }
+
+        // Mensajes contextuales de la IA
+        if (Math.abs(changePerc) > 5 && Math.random() > 0.9) {
+            log(changePerc > 0 ? "FLUJO DE CAPITAL MASIVO DETECTADO." : "PRESIÓN DE VENTA INSTITUCIONAL.", "warn");
+        }
+
+        recalcWealth();
+    }
+
+    // --- 4. CALCULADORA FINANCIERA ---
+
+    function recalcWealth() {
+        const stack = parseFloat(els.stack.value) || 0;
+        const targetUSD = parseFloat(els.target.value) || 0;
+        
+        // El objetivo es en USD, así que convertimos el total final a la moneda local
+        const projectedTotalUSD = stack * targetUSD;
+        const projectedLocal = projectedTotalUSD * state.fxRate;
+        
+        const currencySymbol = getCurrencySymbol(state.currency);
+        
+        // Formateador de moneda robusto
+        els.wealth.innerText = new Intl.NumberFormat('es-ES', { 
+            style: 'currency', 
+            currency: state.currency 
+        }).format(projectedLocal);
+    }
+
+    // Event Listeners
+    els.stack.addEventListener('input', recalcWealth);
+    els.target.addEventListener('input', recalcWealth);
+    
+    els.currency.addEventListener("change", async (e) => {
+        state.currency = e.target.value;
+        log(`RECONFIGURANDO DIVISA: ${state.currency}...`, "normal");
+        await fetchFX(state.currency);
+        updateDashboard(state.price, state.volume, state.change24h); // Refrescar UI inmediata
+    });
+
+    // --- 5. UTILIDADES Y DATOS EXTERNOS ---
+
+    async function fetchFX(currency) {
+        if (currency === "USD") { state.fxRate = 1; return; }
+        try {
+            // API gratuita de tasas de cambio
+            const res = await fetch(`https://api.exchangerate-api.com/v4/latest/USD`);
+            const data = await res.json();
+            state.fxRate = data.rates[currency];
+            log(`TIPO DE CAMBIO ACTUALIZADO: 1 USD = ${state.fxRate} ${currency}`, "ai");
+        } catch (e) {
+            log("ERROR OBTENIENDO FOREX. USANDO TASA 1:1.", "warn");
+            state.fxRate = 1;
+        }
+    }
+
+    async function fetchMarketData() {
+        try {
+            // Usamos CoinGecko para datos globales (Rate limit permisivo)
+            const res = await fetch("https://api.coingecko.com/api/v3/global");
+            const global = await res.json();
+            
+            // Nota: Para evitar muchas llamadas, estimamos el market cap de XRP basado en precio * supply circulante (~56B)
+            // Esto es más eficiente que hacer otra llamada a API externa.
+            const estimatedSupply = 56000000000; 
+            state.xrpMarketCap = state.price * estimatedSupply;
+            state.totalMarketCap = global.data.total_market_cap.usd;
+
+            const dom = (state.xrpMarketCap / state.totalMarketCap) * 100;
+            els.dominance.innerText = dom.toFixed(2) + "%";
+            
+        } catch (e) {
+            // Silencioso para no ensuciar el log
+        }
+    }
+
+    // Sistema de Log con efecto máquina de escribir simplificado
     function log(msg, type) {
         const div = document.createElement('div');
         div.className = `log-line ${type}`;
-        div.innerText = `> ${msg}`;
+        div.innerText = msg; // El CSS maneja el fade-in
         els.term.prepend(div);
-        if (els.term.children.length > 8) els.term.lastChild.remove();
+        if (els.term.children.length > 7) els.term.lastChild.remove();
     }
 
-    function logOnce(msg, type) {
-        if (msgCache === msg) return;
-        msgCache = msg;
-        log(msg, type);
-        // Reset cache after 10s
-        setTimeout(() => msgCache = "", 10000);
+    function formatCompactNumber(number) {
+        return new Intl.NumberFormat('en-US', {
+            notation: "compact",
+            compactDisplay: "short",
+            maximumFractionDigits: 1
+        }).format(number);
+    }
+
+    function getCurrencySymbol(code) {
+        const symbols = { USD: '$', EUR: '€', JPY: '¥', BRL: 'R$', ARS: '$', MXN: '$' };
+        return symbols[code] || '$';
     }
 
     // ARRANQUE
-    initConnection();
+    initSystem();
 
 </script>
 </body>
-
 </html>
+
