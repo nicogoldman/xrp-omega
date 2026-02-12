@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XRP OMEGA | Superior AI Interface</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>XRP OMEGA | Live Microstructure Simulator</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='sans-serif' fill='%2300f3ff'>X</text></svg>">
 
     <style>
-        /* --- ESTÉTICA CYBERPUNK HIGH-END --- */
         :root {
             --void: #020204;
             --hologram: rgba(0, 243, 255, 0.05);
@@ -20,183 +17,301 @@
             --glass: rgba(10, 15, 20, 0.6);
             --glass-border: rgba(0, 243, 255, 0.15);
         }
-        
+
         * { box-sizing: border-box; outline: none; }
 
-        body { 
-            margin: 0; 
-            background-color: var(--void); 
-            color: var(--cyan); 
-            font-family: 'Space Mono', monospace; 
-            /* CORRECCIÓN DE SCROLL AQUI: */
-            overflow-x: hidden; /* Evita scroll lateral indeseado */
-            overflow-y: auto;   /* PERMITE scroll vertical si es necesario */
+        body {
+            margin: 0;
+            background-color: var(--void);
+            color: var(--cyan);
+            font-family: 'Space Mono', monospace;
+            overflow-x: hidden;
+            overflow-y: auto;
             background-image: radial-gradient(circle at 50% 50%, #0a0f1e 0%, #000 100%);
             min-height: 100vh;
         }
 
-        /* EFECTO CRT / SCANLINES */
         body::before {
-            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 999; background-size: 100% 2px, 3px 100%; pointer-events: none;
+            z-index: 999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
         }
-        
-        /* VIÑETA CINEMÁTICA */
+
         body::after {
-            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             background: radial-gradient(circle, transparent 60%, black 100%);
-            z-index: 998; pointer-events: none;
+            z-index: 998;
+            pointer-events: none;
         }
 
-        .layout { 
-            max-width: 1800px; margin: 0 auto; padding: 20px; 
-            display: grid; grid-template-columns: 350px 1fr; gap: 20px; 
-            /* CORRECCIÓN: Altura mínima en lugar de fija */
-            min-height: 100vh; 
+        .layout {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            min-height: 100vh;
             height: auto;
-            position: relative; z-index: 10;
-            padding-bottom: 50px; /* Espacio extra al final para móviles */
+            position: relative;
+            z-index: 10;
+            padding-bottom: 50px;
         }
 
-        /* PANEL DE CONTROL (IZQUIERDA) */
-        .cyber-panel { 
-            background: var(--glass); 
-            border: 1px solid var(--glass-border); 
-            padding: 25px; 
-            border-radius: 4px; 
+        .cyber-panel {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 25px;
+            border-radius: 4px;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            display: flex; flex-direction: column; gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
             box-shadow: 0 0 40px rgba(0,0,0,0.6);
-            height: fit-content; /* Para que no se estire infinitamente */
+            height: fit-content;
         }
 
-        .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; position: relative; }
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 20px;
+            position: relative;
+        }
+
         .header::after {
-            content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
-            width: 60px; height: 2px; background: var(--cyan); box-shadow: 0 0 15px var(--cyan);
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 2px;
+            background: var(--cyan);
+            box-shadow: 0 0 15px var(--cyan);
         }
 
         .logo { font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -2px; color: white; text-shadow: 0 0 20px var(--cyan); }
         .logo span { color: var(--acid); font-size: 0.9rem; letter-spacing: 6px; display: block; margin-top: 5px; opacity: 0.9; }
 
+        .exec-status {
+            margin-top: 12px;
+            display: inline-block;
+            font-size: 0.7rem;
+            letter-spacing: 1.6px;
+            border: 1px solid #333;
+            padding: 4px 10px;
+            color: #666;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .exec-status.live {
+            border-color: var(--acid);
+            color: var(--acid);
+            text-shadow: 0 0 12px rgba(204, 255, 0, 0.6);
+            box-shadow: 0 0 14px rgba(204, 255, 0, 0.3);
+        }
+
         .control-group label { display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .cyber-input { 
-            background: rgba(0,0,0,0.4); 
-            border: 1px solid #333; 
-            color: white; 
-            padding: 12px 15px; 
-            width: 100%; 
-            font-family: 'Space Mono'; 
-            font-size: 1.1rem; 
+
+        .cyber-input {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #333;
+            color: white;
+            padding: 12px 15px;
+            width: 100%;
+            font-family: 'Space Mono';
+            font-size: 1.1rem;
             transition: all 0.3s ease;
             border-left: 2px solid transparent;
         }
-        .cyber-input:focus { 
-            border-color: var(--cyan); 
+
+        .cyber-input:focus {
+            border-color: var(--cyan);
             border-left: 5px solid var(--cyan);
             background: rgba(0, 243, 255, 0.05);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1); 
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
         }
 
-        /* TERMINAL DE LOGS */
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .cyber-btn {
+            background: rgba(0, 243, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 12px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+
+        .cyber-btn:hover {
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            color: var(--cyan);
+        }
+
+        .cyber-btn.stop {
+            background: rgba(255, 42, 109, 0.08);
+        }
+
+        .cyber-btn.stop:hover {
+            border-color: var(--danger);
+            color: var(--danger);
+            box-shadow: 0 0 15px rgba(255, 42, 109, 0.2);
+        }
+
         .terminal {
-            /* Ajuste para móvil: altura fija mínima */
-            min-height: 150px;
-            background: rgba(5, 5, 5, 0.95); 
-            border: 1px solid #222; 
-            padding: 15px; font-size: 0.75rem; 
+            min-height: 190px;
+            background: rgba(5, 5, 5, 0.95);
+            border: 1px solid #222;
+            padding: 15px;
+            font-size: 0.75rem;
             overflow: hidden;
-            display: flex; flex-direction: column-reverse;
+            display: flex;
+            flex-direction: column-reverse;
             border-left: 3px solid var(--acid);
             position: relative;
         }
+
         .terminal::before {
-            content: "SYSTEM LOG // NODO-01"; position: absolute; top: 5px; right: 10px; font-size: 0.6rem; color: #444;
+            content: "SIMULATION LOG // XRPUSDT";
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.6rem;
+            color: #444;
         }
+
         .log-line { margin-bottom: 4px; padding-left: 10px; opacity: 0; animation: fadeIn 0.3s forwards; }
         .log-line::before { content: ">"; margin-right: 8px; color: #555; }
         .log-line.ai { color: var(--acid); text-shadow: 0 0 5px rgba(204, 255, 0, 0.3); }
         .log-line.warn { color: var(--danger); }
         .log-line.normal { color: #aaa; }
 
-        /* DASHBOARD PRINCIPAL */
         .main-deck { display: grid; grid-template-rows: auto 1fr auto; gap: 20px; }
 
         .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        .metric-card { 
-            background: rgba(255,255,255,0.02); 
-            border: 1px solid var(--glass-border); 
-            padding: 15px; text-align: center; 
-            position: relative; overflow: hidden;
+        .metric-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--glass-border);
+            padding: 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
             transition: background 0.3s;
         }
+
         .metric-card:hover { background: rgba(255,255,255,0.05); }
         .metric-card h3 { margin: 0; font-size: 0.65rem; color: #666; letter-spacing: 2px; text-transform: uppercase; }
         .metric-card .val { font-size: 1.6rem; font-weight: 700; margin-top: 10px; color: white; font-family: 'Syncopate'; }
         .metric-card .status { font-size: 0.6rem; color: var(--cyan); margin-top: 5px; opacity: 0.8; }
 
-        /* NÚCLEO VISUAL (CANVAS) */
         .singularity-container {
-            position: relative; 
+            position: relative;
             border: 1px solid var(--glass-border);
             box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
             background: radial-gradient(circle, #0d121d 0%, #000 90%);
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
             border-radius: 2px;
-            /* Altura fija para el gráfico para asegurar visibilidad */
             min-height: 400px;
         }
+
         canvas#nexus { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; opacity: 0.8; }
-        
+
         .center-data { z-index: 2; text-align: center; pointer-events: none; mix-blend-mode: screen; }
-        .big-price { 
-            font-size: 5rem; font-family: 'Syncopate'; font-weight: 700; color: white; 
-            letter-spacing: -4px; line-height: 1;
+        .big-price {
+            font-size: 5rem;
+            font-family: 'Syncopate';
+            font-weight: 700;
+            color: white;
+            letter-spacing: -4px;
+            line-height: 1;
             text-shadow: 0 0 40px rgba(0, 243, 255, 0.3);
         }
+
         .sub-price { font-size: 1rem; color: var(--acid); letter-spacing: 8px; text-transform: uppercase; margin-bottom: 10px; }
-        
+
         .connect-status {
-            margin-top: 15px; font-size: 0.7rem; letter-spacing: 2px;
-            display: inline-block; padding: 4px 10px; border: 1px solid #333; background: black;
+            margin-top: 15px;
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+            display: inline-block;
+            padding: 4px 10px;
+            border: 1px solid #333;
+            background: black;
         }
 
-        /* BARRA DE RIQUEZA */
         .wealth-bar {
             background: linear-gradient(90deg, rgba(10,20,15,0.9) 0%, rgba(5,10,5,1) 100%);
-            border: 1px solid var(--acid); 
+            border: 1px solid var(--acid);
             padding: 25px;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             box-shadow: 0 0 20px rgba(204, 255, 0, 0.1);
-            position: relative; overflow: hidden;
-            /* Evitar que se rompa en pantallas muy pequeñas */
-            flex-wrap: wrap; 
+            position: relative;
+            overflow: hidden;
+            flex-wrap: wrap;
             gap: 15px;
         }
+
         .wealth-bar::before {
-            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
             background: linear-gradient(90deg, transparent, rgba(204,255,0,0.1), transparent);
             animation: shine 6s infinite;
         }
-        .wealth-total { font-size: 2.5rem; color: var(--acid); font-weight: 700; text-shadow: 0 0 15px rgba(204, 255, 0, 0.4); font-family: 'Syncopate'; word-break: break-all; }
+
+        .wealth-total {
+            font-size: 2.5rem;
+            color: var(--acid);
+            font-weight: 700;
+            text-shadow: 0 0 15px rgba(204, 255, 0, 0.4);
+            font-family: 'Syncopate';
+            word-break: break-all;
+        }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
-        
-        /* MEDIA QUERIES PARA MOVIL */
-        @media (max-width: 1100px) { 
-            .layout { grid-template-columns: 1fr; height: auto; display: flex; flex-direction: column; } 
-            .metrics-grid { grid-template-columns: repeat(2, 1fr); } 
-            .singularity-container { height: 350px; min-height: 350px; } 
+
+        @media (max-width: 1100px) {
+            .layout { grid-template-columns: 1fr; height: auto; display: flex; flex-direction: column; }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .singularity-container { height: 350px; min-height: 350px; }
             .big-price { font-size: 3.5rem; }
-            .cyber-panel { order: 2; /* Poner panel abajo en movil si prefieres, o quitar esta linea */ }
+            .cyber-panel { order: 2; }
             .main-deck { order: 1; }
         }
-        
+
         @media (max-width: 600px) {
             .big-price { font-size: 2.8rem; }
             .wealth-total { font-size: 1.8rem; }
@@ -204,80 +319,65 @@
             .metric-card .val { font-size: 1.2rem; }
         }
     </style>
-
 </head>
 <body>
-
 <div class="layout">
     <div class="cyber-panel">
         <div class="header">
-            <div class="logo">OMEGA <span>INTERFACE</span></div>
+            <div class="logo">OMEGA <span>MICROSTRUCTURE SIM</span></div>
+            <div class="exec-status" id="execStatus">STANDBY</div>
         </div>
 
         <div class="control-group">
-            <label><span>Tokens (XRP)</span> <span>STACK</span></label>
-            <input type="number" id="userStack" class="cyber-input" value="1000">
+            <label><span>Comisión por Trade</span> <span>FEE</span></label>
+            <input type="text" class="cyber-input" value="0.10%" readonly>
         </div>
 
-        <div class="control-group">
-            <label><span>Target Exit (USD)</span> <span>GOAL</span></label>
-            <input type="number" id="targetPrice" class="cyber-input" value="5.00" step="0.10">
+        <div class="button-grid">
+            <button id="startBtn" class="cyber-btn">INICIAR PROTOCOLO OMEGA</button>
+            <button id="stopBtn" class="cyber-btn stop">TERMINAR SESIÓN</button>
         </div>
 
-        <div class="control-group">
-            <label><span>Divisa Base</span> <span>FIAT</span></label>
-            <select id="currencySelect" class="cyber-input">
-                <option value="USD">Dólar (USD)</option>
-                <option value="EUR">Euro (EUR)</option>
-                <option value="JPY">Yen (JPY)</option>
-                <option value="BRL">Real (BRL)</option>
-                <option value="ARS">Peso Argentino (ARS)</option>
-                <option value="MXN">Peso Mexicano (MXN)</option>
-            </select>
-        </div>
-
-        <div class="terminal" id="terminal">
-            </div>
+        <div class="terminal" id="terminal"></div>
     </div>
 
     <div class="main-deck">
-        
         <div class="metrics-grid">
             <div class="metric-card">
-                <h3>VIBRACIÓN RSI</h3>
-                <div class="val" id="vibVal">--</div>
-                <div class="status" id="vibText">INIT</div>
+                <h3>Omega Index</h3>
+                <div class="val" id="omegaVal">50.00</div>
+                <div class="status" id="omegaText">NEUTRAL FIELD</div>
             </div>
             <div class="metric-card">
-                <h3>VOL 24H (USD)</h3>
-                <div class="val" id="pressureVal">--</div>
-                <div class="status">LIQUIDEZ</div>
+                <h3>Portfolio Value (USD)</h3>
+                <div class="val" id="portfolioVal">$0.00</div>
+                <div class="status" id="positionStatus">POSITION: XRP</div>
             </div>
             <div class="metric-card">
-                <h3>TENDENCIA IA</h3>
-                <div class="val" id="trendVal">--</div>
-                <div class="status" id="trendText">ANALIZANDO</div>
+                <h3>ROI Alpha %</h3>
+                <div class="val" id="roiVal">0.00%</div>
+                <div class="status">VS INITIAL VALUE</div>
             </div>
             <div class="metric-card">
-                <h3>DOMINANCIA</h3>
-                <div class="val" id="dominanceVal">--%</div>
-                <div class="status">CAPITALIZACIÓN</div>
+                <h3>Flow / LIQ</h3>
+                <div class="val" id="flowVal">0.00</div>
+                <div class="status" id="liqVal">LIQ: 0.0000</div>
             </div>
         </div>
 
         <div class="singularity-container">
             <canvas id="nexus"></canvas>
             <div class="center-data">
-                <div class="sub-price">PRECIO DE MERCADO</div>
+                <div class="sub-price">XRPUSDT LAST PRICE</div>
                 <div class="big-price" id="mainPrice">0.0000</div>
-                <div class="connect-status" id="connectStatus" style="color:#666">SISTEMA EN ESPERA</div>
+                <div class="connect-status" id="connectStatus" style="color:#666">LINK IDLE</div>
             </div>
         </div>
 
         <div class="wealth-bar">
             <div>
-                <label style="color:white; font-size:0.8rem; display:block; letter-spacing:1px; margin-bottom:5px;">PATRIMONIO PROYECTADO</label>
-                <small style="color:#888; font-family:'Space Mono';">Basado en objetivo y tipo de cambio real.</small>
+                <label style="color:white; font-size:0.8rem; display:block; letter-spacing:1px; margin-bottom:5px;">SIMULATED PORTFOLIO</label>
+                <small style="color:#888; font-family:'Space Mono';">Browser-memory only. Public market data only. No real trading.</small>
             </div>
             <div class="wealth-total" id="wealthTotal">$0.00</div>
         </div>
@@ -285,44 +385,43 @@
 </div>
 
 <script>
-    /**
-     * OMEGA CORE v2.0
-     * Arquitectura mejorada para estabilidad y rendimiento.
-     */
+    const FEE_RATE = 0.001;
 
-    // --- ESTADO INMUTABLE & REFERENCIAS ---
     const state = {
-        price: 0.0,
-        volume: 0.0,
-        change24h: 0.0,
-        currency: "USD",
-        fxRate: 1,
-        xrpMarketCap: 0,
-        totalMarketCap: 0,
-        isSimulation: false,
-        lastFetch: 0
+        price: 0,
+        balanceXRP: 1000,
+        balanceUSDT: 0,
+        position: 'XRP',
+        initialValueUSD: null,
+        active: false,
+        omega: 50,
+        flowDelta: 0,
+        liqImbalance: 0,
+        lastPrice: 0,
+        lastWallAlertAt: 0
     };
 
     const els = {
-        stack: document.getElementById('userStack'),
-        target: document.getElementById('targetPrice'),
-        currency: document.getElementById('currencySelect'),
-        dominance: document.getElementById('dominanceVal'),
-        wealth: document.getElementById('wealthTotal'),
         price: document.getElementById('mainPrice'),
-        status: document.getElementById('connectStatus'),
+        connect: document.getElementById('connectStatus'),
         term: document.getElementById('terminal'),
-        vib: document.getElementById('vibVal'),
-        vibTxt: document.getElementById('vibText'),
-        press: document.getElementById('pressureVal'),
-        trend: document.getElementById('trendVal'),
-        trendTxt: document.getElementById('trendText')
+        omegaVal: document.getElementById('omegaVal'),
+        omegaText: document.getElementById('omegaText'),
+        portfolioVal: document.getElementById('portfolioVal'),
+        roiVal: document.getElementById('roiVal'),
+        positionStatus: document.getElementById('positionStatus'),
+        flowVal: document.getElementById('flowVal'),
+        liqVal: document.getElementById('liqVal'),
+        wealthTotal: document.getElementById('wealthTotal'),
+        execStatus: document.getElementById('execStatus'),
+        startBtn: document.getElementById('startBtn'),
+        stopBtn: document.getElementById('stopBtn')
     };
 
-    // --- 1. SISTEMA VISUAL NEXUS (CANVAS OPTIMIZADO) ---
     const canvas = document.getElementById('nexus');
     const ctx = canvas.getContext('2d');
-    let width, height;
+    let width = 0;
+    let height = 0;
     let particles = [];
 
     function resizeCanvas() {
@@ -332,10 +431,10 @@
     }
 
     function initParticles() {
-        particles = Array.from({length: 70}, () => ({
+        particles = Array.from({ length: 70 }, () => ({
             x: Math.random() * width,
             y: Math.random() * height,
-            vx: (Math.random() - 0.5) * 0.5, // Movimiento orgánico lento
+            vx: (Math.random() - 0.5) * 0.5,
             vy: (Math.random() - 0.5) * 0.5,
             size: Math.random() * 2 + 0.5,
             phase: Math.random() * Math.PI * 2
@@ -343,42 +442,35 @@
     }
 
     function drawNexus() {
-        // Efecto de rastro (Fade out)
-        ctx.fillStyle = 'rgba(5, 8, 16, 0.15)'; // Fondo semitransparente para estelas
+        ctx.fillStyle = 'rgba(5, 8, 16, 0.15)';
         ctx.fillRect(0, 0, width, height);
 
-        // Definir color base según tendencia
-        const baseColor = state.change24h >= 0 ? 
-            {r: 204, g: 255, b: 0} : // Acid Green
-            {r: 255, g: 42, b: 109}; // Danger Red
+        const omegaDrift = (state.omega - 50) / 50;
+        const baseColor = omegaDrift >= 0
+            ? { r: 204, g: 255, b: 0 }
+            : { r: 255, g: 42, b: 109 };
 
         particles.forEach((p, i) => {
-            // Actualizar posición
             p.x += p.vx;
             p.y += p.vy;
 
-            // Rebote suave en bordes
             if (p.x < 0 || p.x > width) p.vx *= -1;
             if (p.y < 0 || p.y > height) p.vy *= -1;
 
-            // Oscilación de tamaño (respiración)
             p.phase += 0.05;
             const currentSize = p.size + Math.sin(p.phase) * 0.5;
 
-            // Dibujar partícula
             ctx.beginPath();
             ctx.arc(p.x, p.y, Math.max(0, currentSize), 0, Math.PI * 2);
             ctx.fillStyle = `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, 0.8)`;
             ctx.fill();
 
-            // Conexiones Neuronales (Optimización de distancia)
             for (let j = i + 1; j < particles.length; j++) {
                 const p2 = particles[j];
                 const dx = p.x - p2.x;
                 const dy = p.y - p2.y;
-                const distSq = dx*dx + dy*dy;
+                const distSq = dx * dx + dy * dy;
 
-                // Solo dibujar si están cerca (distancia < 100px => distSq < 10000)
                 if (distSq < 10000) {
                     const alpha = 1 - (distSq / 10000);
                     ctx.beginPath();
@@ -394,227 +486,212 @@
         requestAnimationFrame(drawNexus);
     }
 
-    // --- 2. MOTOR DE DATOS & IA ---
+    async function fetchTickerPrice() {
+        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=XRPUSDT');
+        if (!res.ok) throw new Error('Ticker unavailable');
+        const data = await res.json();
+        state.price = parseFloat(data.price);
+    }
+
+    async function fetchOrderBook() {
+        const res = await fetch('https://api.binance.com/api/v3/depth?symbol=XRPUSDT&limit=500');
+        if (!res.ok) throw new Error('Order book unavailable');
+        const data = await res.json();
+
+        let totalBids = 0;
+        let totalAsks = 0;
+
+        data.bids.forEach(level => {
+            totalBids += parseFloat(level[1]);
+        });
+
+        data.asks.forEach(level => {
+            totalAsks += parseFloat(level[1]);
+        });
+
+        const den = totalBids + totalAsks;
+        state.liqImbalance = den === 0 ? 0 : (totalBids - totalAsks) / den;
+
+        if (Math.abs(state.liqImbalance) > 0.4) {
+            const now = Date.now();
+            if (now - state.lastWallAlertAt > 12000) {
+                log('LIQUIDITY WALL DETECTED', 'warn');
+                state.lastWallAlertAt = now;
+            }
+        }
+    }
+
+    async function fetchTrades() {
+        const res = await fetch('https://api.binance.com/api/v3/trades?symbol=XRPUSDT&limit=500');
+        if (!res.ok) throw new Error('Trades unavailable');
+        const trades = await res.json();
+
+        let buyQty = 0;
+        let sellQty = 0;
+
+        trades.forEach(t => {
+            const qty = parseFloat(t.qty);
+            if (t.isBuyerMaker === false) {
+                buyQty += qty;
+            } else {
+                sellQty += qty;
+            }
+        });
+
+        state.flowDelta = buyQty - sellQty;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function computeOmega() {
+        const priceVelocity = state.price - state.lastPrice;
+        const rawOmega = (state.flowDelta * state.liqImbalance) - (priceVelocity * 10);
+        state.omega = clamp(50 + rawOmega, 0, 100);
+        state.lastPrice = state.price;
+    }
+
+    function runTradingLogic() {
+        if (!state.active) return;
+
+        if (state.omega > 85 && state.position === 'USDT' && state.balanceUSDT > 0) {
+            const usdtToSpend = state.balanceUSDT;
+            const grossXrp = usdtToSpend / state.price;
+            const feeXrp = grossXrp * FEE_RATE;
+            const netXrp = grossXrp - feeXrp;
+
+            state.balanceXRP += netXrp;
+            state.balanceUSDT = 0;
+            state.position = 'XRP';
+
+            logTrade('BUY', state.price, feeXrp, 'XRP');
+        }
+
+        if (state.omega < 15 && state.position === 'XRP' && state.balanceXRP > 0) {
+            const xrpToSell = state.balanceXRP;
+            const grossUsdt = xrpToSell * state.price;
+            const feeUsdt = grossUsdt * FEE_RATE;
+            const netUsdt = grossUsdt - feeUsdt;
+
+            state.balanceUSDT += netUsdt;
+            state.balanceXRP = 0;
+            state.position = 'USDT';
+
+            logTrade('SELL', state.price, feeUsdt, 'USDT');
+        }
+    }
+
+    function logTrade(side, price, feeValue, feeAsset) {
+        const info = `${side} @ ${price.toFixed(5)} | Fee: ${feeValue.toFixed(5)} ${feeAsset} | Balances => XRP ${state.balanceXRP.toFixed(4)} / USDT ${state.balanceUSDT.toFixed(4)}`;
+        log(info, side === 'BUY' ? 'ai' : 'warn');
+    }
+
+    function getPortfolioValueUSD() {
+        return state.balanceUSDT + (state.balanceXRP * state.price);
+    }
+
+    function updateUI() {
+        els.price.innerText = state.price ? state.price.toFixed(5) : '0.00000';
+
+        els.omegaVal.innerText = state.omega.toFixed(2);
+        if (state.omega > 85) {
+            els.omegaVal.style.color = '#ccff00';
+            els.omegaText.textContent = 'ENTRY BIAS > 85';
+        } else if (state.omega < 15) {
+            els.omegaVal.style.color = '#ff2a6d';
+            els.omegaText.textContent = 'EXIT BIAS < 15';
+        } else {
+            els.omegaVal.style.color = 'white';
+            els.omegaText.textContent = 'NEUTRAL FIELD';
+        }
+
+        els.flowVal.innerText = state.flowDelta.toFixed(2);
+        els.liqVal.innerText = `LIQ: ${state.liqImbalance.toFixed(4)}`;
+
+        const portfolio = getPortfolioValueUSD();
+        els.portfolioVal.innerText = `$${portfolio.toFixed(2)}`;
+        els.wealthTotal.innerText = `$${portfolio.toFixed(2)}`;
+        els.positionStatus.innerText = `POSITION: ${state.position}`;
+
+        if (state.initialValueUSD === null && state.price > 0) {
+            state.initialValueUSD = portfolio;
+            log(`INITIAL VALUE LOCKED: $${state.initialValueUSD.toFixed(2)}`, 'normal');
+        }
+
+        let roi = 0;
+        if (state.initialValueUSD && state.initialValueUSD > 0) {
+            roi = ((portfolio - state.initialValueUSD) / state.initialValueUSD) * 100;
+        }
+        els.roiVal.innerText = `${roi.toFixed(2)}%`;
+        els.roiVal.style.color = roi >= 0 ? '#ccff00' : '#ff2a6d';
+    }
+
+    function updateExecutionStatus() {
+        if (state.active) {
+            els.execStatus.innerText = 'EXECUTING';
+            els.execStatus.classList.add('live');
+        } else {
+            els.execStatus.innerText = 'STANDBY';
+            els.execStatus.classList.remove('live');
+        }
+    }
+
+    function log(msg, type = 'normal') {
+        const div = document.createElement('div');
+        div.className = `log-line ${type}`;
+        div.innerText = msg;
+        els.term.prepend(div);
+        if (els.term.children.length > 12) els.term.lastChild.remove();
+    }
+
+    async function tick() {
+        try {
+            await Promise.all([fetchTickerPrice(), fetchOrderBook(), fetchTrades()]);
+            computeOmega();
+            runTradingLogic();
+            updateUI();
+
+            els.connect.innerText = 'PUBLIC BINANCE FEED ONLINE';
+            els.connect.style.color = '#00f3ff';
+            els.connect.style.borderColor = '#00f3ff';
+        } catch (err) {
+            els.connect.innerText = 'FEED DEGRADED - RETRYING';
+            els.connect.style.color = '#ff2a6d';
+            els.connect.style.borderColor = '#ff2a6d';
+            log(`DATA LOOP WARNING: ${err.message}`, 'warn');
+        }
+    }
+
+    function attachControls() {
+        els.startBtn.addEventListener('click', () => {
+            state.active = true;
+            updateExecutionStatus();
+            log('PROTOCOLO OMEGA ACTIVADO', 'ai');
+        });
+
+        els.stopBtn.addEventListener('click', () => {
+            state.active = false;
+            updateExecutionStatus();
+            log('SESIÓN TERMINADA - STANDBY', 'normal');
+        });
+    }
 
     async function initSystem() {
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         drawNexus();
+        attachControls();
+        updateExecutionStatus();
 
-        log("INICIANDO PROTOCOLO OMEGA v2.0...", "normal");
-        await new Promise(r => setTimeout(r, 600)); // Efecto dramático
-        log("SINCRONIZANDO NODOS DE MERCADO...", "ai");
-        
-        await fetchFX(state.currency); // Obtener cambio inicial
-        fetchMarketData(); // Datos globales
-        startDataStream(); // Datos en vivo
+        log('SIMULATION ONLY // NO REAL TRADING', 'warn');
+        log('BOOTING MICROSTRUCTURE ENGINE...', 'normal');
+
+        await tick();
+        setInterval(tick, 4000);
     }
 
-    async function startDataStream() {
-        try {
-            await fetchPrice();
-            // Intervalo principal de 5 segundos
-            setInterval(fetchPrice, 5000); 
-            setInterval(fetchMarketData, 60000); // Market cap cada minuto
-        } catch (e) {
-            log("FALLO CRÍTICO EN ENLACE API. ACTIVANDO SIMULACIÓN.", "warn");
-            state.isSimulation = true;
-            simulateDataStream();
-        }
-    }
-
-    async function fetchPrice() {
-        if (state.isSimulation) return;
-        
-        try {
-            // Usamos Binance API pública
-            const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
-            if (!res.ok) throw new Error("API Limit");
-            const data = await res.json();
-            
-            updateDashboard(
-                parseFloat(data.lastPrice), 
-                parseFloat(data.quoteVolume), 
-                parseFloat(data.priceChangePercent)
-            );
-
-            els.status.innerText = "CONEXIÓN SEGURA: BINANCE";
-            els.status.style.color = "#00f3ff";
-            els.status.style.borderColor = "#00f3ff";
-
-        } catch (e) {
-            console.warn("API Error, cambiando a simulación temporal.");
-            state.isSimulation = true;
-            simulateDataStream();
-        }
-    }
-
-    // Modo Fallback (Ghost Protocol)
-    function simulateDataStream() {
-        els.status.innerText = "MODO PREDICTIVO (SIMULACIÓN)";
-        els.status.style.color = "#ff2a6d";
-        els.status.style.borderColor = "#ff2a6d";
-        
-        if(state.price === 0) updateDashboard(2.45, 500000000, 2.5); // Seed data
-
-        setInterval(() => {
-            if (!state.isSimulation) return;
-            // Movimiento aleatorio coherente
-            const volatility = 0.008; 
-            const noise = 1 + (Math.random() * volatility - (volatility/2));
-            const newPrice = state.price * noise;
-            const newChange = state.change24h + (Math.random() - 0.5);
-            
-            updateDashboard(newPrice, state.volume, newChange);
-        }, 2000);
-    }
-
-    // --- 3. ACTUALIZACIÓN UI ---
-
-    function updateDashboard(price, volume, changePerc) {
-        state.price = price;
-        state.volume = volume;
-        state.change24h = changePerc;
-
-        // A. Precio Principal
-        const localPrice = price * state.fxRate;
-        const currencySymbol = getCurrencySymbol(state.currency);
-        
-        // Animación numérica simple si cambia drásticamente
-        els.price.innerText = `${currencySymbol} ${localPrice.toFixed(4)}`;
-
-        // B. Indicadores
-        // RSI Simulado (La API pública no da RSI directo, lo inferimos de la volatilidad)
-        let rsi = 50 + (changePerc * 2.5);
-        rsi = Math.max(10, Math.min(90, rsi)); // Clamp entre 10 y 90
-        
-        els.vib.innerText = rsi.toFixed(0);
-        
-        if (rsi > 70) {
-            els.vib.style.color = "#ff2a6d"; // Rojo
-            els.vibTxt.innerText = "SOBRECOMPRA";
-        } else if (rsi < 30) {
-            els.vib.style.color = "#ccff00"; // Verde Acido
-            els.vibTxt.innerText = "SOBREVENTA";
-        } else {
-            els.vib.style.color = "white";
-            els.vibTxt.innerText = "NEUTRAL";
-        }
-
-        // Volumen formateado
-        els.press.innerText = formatCompactNumber(volume * state.fxRate);
-
-        // Tendencia
-        if (changePerc > 0) {
-            els.trend.innerText = "ALCISTA";
-            els.trend.style.color = "#ccff00";
-            els.trendTxt.innerText = `+${changePerc.toFixed(2)}% FUERZA`;
-        } else {
-            els.trend.innerText = "BAJISTA";
-            els.trend.style.color = "#ff2a6d";
-            els.trendTxt.innerText = `${changePerc.toFixed(2)}% CORRECCIÓN`;
-        }
-
-        // Mensajes contextuales de la IA
-        if (Math.abs(changePerc) > 5 && Math.random() > 0.9) {
-            log(changePerc > 0 ? "FLUJO DE CAPITAL MASIVO DETECTADO." : "PRESIÓN DE VENTA INSTITUCIONAL.", "warn");
-        }
-
-        recalcWealth();
-    }
-
-    // --- 4. CALCULADORA FINANCIERA ---
-
-    function recalcWealth() {
-        const stack = parseFloat(els.stack.value) || 0;
-        const targetUSD = parseFloat(els.target.value) || 0;
-        
-        // El objetivo es en USD, así que convertimos el total final a la moneda local
-        const projectedTotalUSD = stack * targetUSD;
-        const projectedLocal = projectedTotalUSD * state.fxRate;
-        
-        const currencySymbol = getCurrencySymbol(state.currency);
-        
-        // Formateador de moneda robusto
-        els.wealth.innerText = new Intl.NumberFormat('es-ES', { 
-            style: 'currency', 
-            currency: state.currency 
-        }).format(projectedLocal);
-    }
-
-    // Event Listeners
-    els.stack.addEventListener('input', recalcWealth);
-    els.target.addEventListener('input', recalcWealth);
-    
-    els.currency.addEventListener("change", async (e) => {
-        state.currency = e.target.value;
-        log(`RECONFIGURANDO DIVISA: ${state.currency}...`, "normal");
-        await fetchFX(state.currency);
-        updateDashboard(state.price, state.volume, state.change24h); // Refrescar UI inmediata
-    });
-
-    // --- 5. UTILIDADES Y DATOS EXTERNOS ---
-
-    async function fetchFX(currency) {
-        if (currency === "USD") { state.fxRate = 1; return; }
-        try {
-            // API gratuita de tasas de cambio
-            const res = await fetch(`https://api.exchangerate-api.com/v4/latest/USD`);
-            const data = await res.json();
-            state.fxRate = data.rates[currency];
-            log(`TIPO DE CAMBIO ACTUALIZADO: 1 USD = ${state.fxRate} ${currency}`, "ai");
-        } catch (e) {
-            log("ERROR OBTENIENDO FOREX. USANDO TASA 1:1.", "warn");
-            state.fxRate = 1;
-        }
-    }
-
-    async function fetchMarketData() {
-        try {
-            // Usamos CoinGecko para datos globales (Rate limit permisivo)
-            const res = await fetch("https://api.coingecko.com/api/v3/global");
-            const global = await res.json();
-            
-            // Nota: Para evitar muchas llamadas, estimamos el market cap de XRP basado en precio * supply circulante (~56B)
-            // Esto es más eficiente que hacer otra llamada a API externa.
-            const estimatedSupply = 56000000000; 
-            state.xrpMarketCap = state.price * estimatedSupply;
-            state.totalMarketCap = global.data.total_market_cap.usd;
-
-            const dom = (state.xrpMarketCap / state.totalMarketCap) * 100;
-            els.dominance.innerText = dom.toFixed(2) + "%";
-            
-        } catch (e) {
-            // Silencioso para no ensuciar el log
-        }
-    }
-
-    // Sistema de Log con efecto máquina de escribir simplificado
-    function log(msg, type) {
-        const div = document.createElement('div');
-        div.className = `log-line ${type}`;
-        div.innerText = msg; // El CSS maneja el fade-in
-        els.term.prepend(div);
-        if (els.term.children.length > 7) els.term.lastChild.remove();
-    }
-
-    function formatCompactNumber(number) {
-        return new Intl.NumberFormat('en-US', {
-            notation: "compact",
-            compactDisplay: "short",
-            maximumFractionDigits: 1
-        }).format(number);
-    }
-
-    function getCurrencySymbol(code) {
-        const symbols = { USD: '$', EUR: '€', JPY: '¥', BRL: 'R$', ARS: '$', MXN: '$' };
-        return symbols[code] || '$';
-    }
-
-    // ARRANQUE
     initSystem();
-
 </script>
 </body>
 </html>
-
