@@ -6,7 +6,6 @@
     <title>XRP OMEGA | Live Microstructure Simulator</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='sans-serif' fill='%2300f3ff'>X</text></svg>">
-
     <style>
         :root {
             --void: #020204;
@@ -32,42 +31,23 @@
         }
 
         body::before {
-            content: " ";
-            display: block;
-            position: fixed;
-            top: 0;
-            left: 0;
-            bottom: 0;
-            right: 0;
+            content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 999;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
+            z-index: 999; background-size: 100% 2px, 3px 100%; pointer-events: none;
         }
 
         body::after {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            content: ""; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: radial-gradient(circle, transparent 60%, black 100%);
-            z-index: 998;
-            pointer-events: none;
+            z-index: 998; pointer-events: none;
         }
 
         .layout {
-            max-width: 1800px;
-            margin: 0 auto;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 20px;
+            max-width: 1800px; margin: 0 auto; padding: 20px;
+            display: grid; grid-template-columns: 350px 1fr; gap: 20px;
             min-height: 100vh;
             height: auto;
-            position: relative;
-            z-index: 10;
+            position: relative; z-index: 10;
             padding-bottom: 50px;
         }
 
@@ -78,52 +58,37 @@
             border-radius: 4px;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            display: flex; flex-direction: column; gap: 20px;
             box-shadow: 0 0 40px rgba(0,0,0,0.6);
             height: fit-content;
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 10px;
-            border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 20px;
-            position: relative;
-        }
-
+        .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; position: relative; }
         .header::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 2px;
-            background: var(--cyan);
-            box-shadow: 0 0 15px var(--cyan);
+            content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
+            width: 60px; height: 2px; background: var(--cyan); box-shadow: 0 0 15px var(--cyan);
         }
 
         .logo { font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -2px; color: white; text-shadow: 0 0 20px var(--cyan); }
         .logo span { color: var(--acid); font-size: 0.9rem; letter-spacing: 6px; display: block; margin-top: 5px; opacity: 0.9; }
 
-        .exec-status {
+        .header-tag {
             margin-top: 12px;
+            font-size: 0.72rem;
+            letter-spacing: 1.8px;
+            border: 1px solid #2c2c2c;
             display: inline-block;
-            font-size: 0.7rem;
-            letter-spacing: 1.6px;
-            border: 1px solid #333;
             padding: 4px 10px;
-            color: #666;
-            background: rgba(0, 0, 0, 0.5);
+            color: #777;
+            background: rgba(0,0,0,0.7);
+            text-transform: uppercase;
         }
 
-        .exec-status.live {
-            border-color: var(--acid);
+        .header-tag.executing {
             color: var(--acid);
-            text-shadow: 0 0 12px rgba(204, 255, 0, 0.6);
-            box-shadow: 0 0 14px rgba(204, 255, 0, 0.3);
+            border-color: rgba(204,255,0,0.65);
+            box-shadow: 0 0 18px rgba(204,255,0,0.4);
+            text-shadow: 0 0 8px rgba(204,255,0,0.5);
         }
 
         .control-group label { display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
@@ -136,72 +101,54 @@
             width: 100%;
             font-family: 'Space Mono';
             font-size: 1.1rem;
-            transition: all 0.3s ease;
             border-left: 2px solid transparent;
         }
 
-        .cyber-input:focus {
-            border-color: var(--cyan);
-            border-left: 5px solid var(--cyan);
-            background: rgba(0, 243, 255, 0.05);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
-        }
-
-        .button-grid {
+        .action-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 10px;
         }
 
-        .cyber-btn {
+        .action-btn {
             background: rgba(0, 243, 255, 0.08);
+            color: var(--cyan);
             border: 1px solid var(--glass-border);
-            color: #fff;
-            padding: 12px;
+            padding: 11px 14px;
             font-family: 'Space Mono', monospace;
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.2s ease;
             text-transform: uppercase;
         }
 
-        .cyber-btn:hover {
+        .action-btn:hover {
             border-color: var(--cyan);
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
-            color: var(--cyan);
+            box-shadow: 0 0 16px rgba(0,243,255,0.25);
         }
 
-        .cyber-btn.stop {
+        .action-btn.stop {
+            border-color: rgba(255, 42, 109, 0.45);
+            color: #ff7fa8;
             background: rgba(255, 42, 109, 0.08);
         }
 
-        .cyber-btn.stop:hover {
-            border-color: var(--danger);
-            color: var(--danger);
-            box-shadow: 0 0 15px rgba(255, 42, 109, 0.2);
-        }
-
         .terminal {
-            min-height: 190px;
+            min-height: 170px;
             background: rgba(5, 5, 5, 0.95);
             border: 1px solid #222;
             padding: 15px;
-            font-size: 0.75rem;
+            font-size: 0.72rem;
             overflow: hidden;
-            display: flex;
-            flex-direction: column-reverse;
+            display: flex; flex-direction: column-reverse;
             border-left: 3px solid var(--acid);
             position: relative;
         }
 
         .terminal::before {
-            content: "SIMULATION LOG // XRPUSDT";
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            font-size: 0.6rem;
-            color: #444;
+            content: "SYSTEM LOG // MICROSTRUCTURE";
+            position: absolute; top: 5px; right: 10px; font-size: 0.6rem; color: #444;
         }
 
         .log-line { margin-bottom: 4px; padding-left: 10px; opacity: 0; animation: fadeIn 0.3s forwards; }
@@ -216,89 +163,147 @@
         .metric-card {
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--glass-border);
-            padding: 15px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+            padding: 15px; text-align: center;
+            position: relative; overflow: hidden;
             transition: background 0.3s;
         }
-
         .metric-card:hover { background: rgba(255,255,255,0.05); }
         .metric-card h3 { margin: 0; font-size: 0.65rem; color: #666; letter-spacing: 2px; text-transform: uppercase; }
-        .metric-card .val { font-size: 1.6rem; font-weight: 700; margin-top: 10px; color: white; font-family: 'Syncopate'; }
+        .metric-card .val { font-size: 1.4rem; font-weight: 700; margin-top: 10px; color: white; font-family: 'Syncopate'; }
         .metric-card .status { font-size: 0.6rem; color: var(--cyan); margin-top: 5px; opacity: 0.8; }
+
+        .regime-tag {
+            margin-top: 8px;
+            font-size: 0.6rem;
+            color: #a9a9a9;
+            letter-spacing: 1px;
+            border: 1px solid #2b2b2b;
+            display: inline-block;
+            padding: 3px 8px;
+            text-transform: uppercase;
+        }
+
+        .regime-tag.range { color: #96e7ff; border-color: rgba(0,243,255,0.3); }
+        .regime-tag.trend { color: var(--acid); border-color: rgba(204,255,0,0.4); }
+        .regime-tag.chaos { color: #ff88ac; border-color: rgba(255,42,109,0.45); }
+
+        .alpha-mini {
+            margin-top: 6px;
+            font-size: 0.58rem;
+            color: #8a8a8a;
+            line-height: 1.35;
+            letter-spacing: 0.5px;
+        }
+
+        .liq-bar-wrap {
+            margin-top: 8px;
+            width: 100%;
+            height: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.45);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .liq-divider {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1px;
+            background: rgba(255,255,255,0.3);
+            z-index: 3;
+        }
+
+        .liq-bids,
+        .liq-asks {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            transition: all 0.6s cubic-bezier(.22,.61,.36,1);
+        }
+
+        .liq-bids { left: 0; background: linear-gradient(90deg, rgba(204,255,0,0.3), rgba(204,255,0,0.8)); width: 50%; }
+        .liq-asks { right: 0; background: linear-gradient(90deg, rgba(255,42,109,0.8), rgba(255,42,109,0.3)); width: 50%; }
 
         .singularity-container {
             position: relative;
             border: 1px solid var(--glass-border);
             box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
             background: radial-gradient(circle, #0d121d 0%, #000 90%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             overflow: hidden;
             border-radius: 2px;
             min-height: 400px;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .singularity-container.flash-buy {
+            border-color: rgba(204,255,0,0.65);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9), 0 0 40px rgba(204,255,0,0.5);
+        }
+
+        .singularity-container.flash-sell {
+            border-color: rgba(255,42,109,0.65);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9), 0 0 40px rgba(255,42,109,0.45);
+        }
+
+        .trade-marker {
+            position: absolute;
+            bottom: 24%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 3;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .trade-marker.buy { color: var(--acid); animation: floatTrade 1s ease forwards; }
+        .trade-marker.sell { color: var(--danger); animation: floatTrade 1s ease forwards; }
+
+        @keyframes floatTrade {
+            0% { transform: translate(-50%, 8px); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: translate(-50%, -40px); opacity: 0; }
         }
 
         canvas#nexus { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; opacity: 0.8; }
 
         .center-data { z-index: 2; text-align: center; pointer-events: none; mix-blend-mode: screen; }
         .big-price {
-            font-size: 5rem;
-            font-family: 'Syncopate';
-            font-weight: 700;
-            color: white;
-            letter-spacing: -4px;
-            line-height: 1;
+            font-size: 5rem; font-family: 'Syncopate'; font-weight: 700; color: white;
+            letter-spacing: -4px; line-height: 1;
             text-shadow: 0 0 40px rgba(0, 243, 255, 0.3);
         }
-
         .sub-price { font-size: 1rem; color: var(--acid); letter-spacing: 8px; text-transform: uppercase; margin-bottom: 10px; }
 
         .connect-status {
-            margin-top: 15px;
-            font-size: 0.7rem;
-            letter-spacing: 2px;
-            display: inline-block;
-            padding: 4px 10px;
-            border: 1px solid #333;
-            background: black;
+            margin-top: 15px; font-size: 0.7rem; letter-spacing: 2px;
+            display: inline-block; padding: 4px 10px; border: 1px solid #333; background: black;
         }
 
         .wealth-bar {
             background: linear-gradient(90deg, rgba(10,20,15,0.9) 0%, rgba(5,10,5,1) 100%);
             border: 1px solid var(--acid);
             padding: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 0 20px rgba(204, 255, 0, 0.1);
-            position: relative;
-            overflow: hidden;
+            position: relative; overflow: hidden;
             flex-wrap: wrap;
             gap: 15px;
         }
 
         .wealth-bar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(204,255,0,0.1), transparent);
             animation: shine 6s infinite;
         }
 
-        .wealth-total {
-            font-size: 2.5rem;
-            color: var(--acid);
-            font-weight: 700;
-            text-shadow: 0 0 15px rgba(204, 255, 0, 0.4);
-            font-family: 'Syncopate';
-            word-break: break-all;
-        }
+        .wealth-total { font-size: 2.5rem; color: var(--acid); font-weight: 700; text-shadow: 0 0 15px rgba(204, 255, 0, 0.4); font-family: 'Syncopate'; word-break: break-all; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
@@ -316,7 +321,7 @@
             .big-price { font-size: 2.8rem; }
             .wealth-total { font-size: 1.8rem; }
             .wealth-bar { flex-direction: column; text-align: center; }
-            .metric-card .val { font-size: 1.2rem; }
+            .metric-card .val { font-size: 1.1rem; }
         }
     </style>
 </head>
@@ -324,18 +329,23 @@
 <div class="layout">
     <div class="cyber-panel">
         <div class="header">
-            <div class="logo">OMEGA <span>MICROSTRUCTURE SIM</span></div>
-            <div class="exec-status" id="execStatus">STANDBY</div>
+            <div class="logo">OMEGA <span>INTERFACE</span></div>
+            <div class="header-tag" id="sessionTag">STANDBY</div>
         </div>
 
         <div class="control-group">
-            <label><span>Comisión por Trade</span> <span>FEE</span></label>
-            <input type="text" class="cyber-input" value="0.10%" readonly>
+            <label><span>Balance XRP</span> <span id="xrpBalanceLabel">1000.0000 XRP</span></label>
+            <input type="text" class="cyber-input" id="xrpInput" value="1000.0000" disabled>
         </div>
 
-        <div class="button-grid">
-            <button id="startBtn" class="cyber-btn">INICIAR PROTOCOLO OMEGA</button>
-            <button id="stopBtn" class="cyber-btn stop">TERMINAR SESIÓN</button>
+        <div class="control-group">
+            <label><span>Balance USDT</span> <span id="usdtBalanceLabel">0.0000 USDT</span></label>
+            <input type="text" class="cyber-input" id="usdtInput" value="0.0000" disabled>
+        </div>
+
+        <div class="action-grid">
+            <button class="action-btn" id="startBtn">INICIAR PROTOCOLO OMEGA</button>
+            <button class="action-btn stop" id="stopBtn">TERMINAR SESIÓN</button>
         </div>
 
         <div class="terminal" id="terminal"></div>
@@ -344,40 +354,48 @@
     <div class="main-deck">
         <div class="metrics-grid">
             <div class="metric-card">
-                <h3>Omega Index</h3>
+                <h3>OMEGA INDEX</h3>
                 <div class="val" id="omegaVal">50.00</div>
-                <div class="status" id="omegaText">NEUTRAL FIELD</div>
+                <div class="status" id="omegaText">NEUTRAL FLOW</div>
+                <div class="regime-tag range" id="regimeTag">RANGE</div>
             </div>
             <div class="metric-card">
-                <h3>Portfolio Value (USD)</h3>
+                <h3>PORTFOLIO VALUE (USD)</h3>
                 <div class="val" id="portfolioVal">$0.00</div>
-                <div class="status" id="positionStatus">POSITION: XRP</div>
+                <div class="status">SIMULATION MEMORY</div>
             </div>
             <div class="metric-card">
-                <h3>ROI Alpha %</h3>
+                <h3>ROI ALPHA %</h3>
                 <div class="val" id="roiVal">0.00%</div>
-                <div class="status">VS INITIAL VALUE</div>
+                <div class="status" id="roiText">BASELINE</div>
+                <div class="alpha-mini" id="alphaMeta">EDGE: $0.00 | MAX DD: 0.00%</div>
             </div>
             <div class="metric-card">
-                <h3>Flow / LIQ</h3>
-                <div class="val" id="flowVal">0.00</div>
-                <div class="status" id="liqVal">LIQ: 0.0000</div>
+                <h3>LIQUIDITY IMBALANCE</h3>
+                <div class="val" id="liqVal">0.00%</div>
+                <div class="status" id="liqText">BALANCED</div>
+                <div class="liq-bar-wrap">
+                    <div class="liq-bids" id="liqBids"></div>
+                    <div class="liq-asks" id="liqAsks"></div>
+                    <div class="liq-divider"></div>
+                </div>
             </div>
         </div>
 
-        <div class="singularity-container">
+        <div class="singularity-container" id="singularityBox">
             <canvas id="nexus"></canvas>
+            <div class="trade-marker" id="tradeMarker">+ BUY</div>
             <div class="center-data">
-                <div class="sub-price">XRPUSDT LAST PRICE</div>
-                <div class="big-price" id="mainPrice">0.0000</div>
-                <div class="connect-status" id="connectStatus" style="color:#666">LINK IDLE</div>
+                <div class="sub-price">XRPUSDT MARKET</div>
+                <div class="big-price" id="mainPrice">$0.0000</div>
+                <div class="connect-status" id="connectStatus" style="color:#666">STANDBY // NO EXECUTION</div>
             </div>
         </div>
 
         <div class="wealth-bar">
             <div>
-                <label style="color:white; font-size:0.8rem; display:block; letter-spacing:1px; margin-bottom:5px;">SIMULATED PORTFOLIO</label>
-                <small style="color:#888; font-family:'Space Mono';">Browser-memory only. Public market data only. No real trading.</small>
+                <label style="color:white; font-size:0.8rem; display:block; letter-spacing:1px; margin-bottom:5px;">SIMULATED PORTFOLIO VALUE</label>
+                <small style="color:#888; font-family:'Space Mono';">No real trading. Public Binance market data only.</small>
             </div>
             <div class="wealth-total" id="wealthTotal">$0.00</div>
         </div>
@@ -386,42 +404,68 @@
 
 <script>
     const FEE_RATE = 0.001;
+    const SLIPPAGE = 0.0002;
 
     const state = {
         price: 0,
         balanceXRP: 1000,
         balanceUSDT: 0,
-        position: 'XRP',
+        position: "XRP",
         initialValueUSD: null,
         active: false,
         omega: 50,
         flowDelta: 0,
+        flowDeltaNorm: 0,
         liqImbalance: 0,
         lastPrice: 0,
-        lastWallAlertAt: 0
+        priceVelocity: 0,
+        volume: 0,
+        change24h: 0,
+        omegaHistory: [],
+        flowHistory: [],
+        liqHistory: [],
+        volHistory: [],
+        omegaConfirm: 0,
+        lastTradeTime: 0,
+        holdValue: 0,
+        maxPortfolioValue: 0,
+        maxDrawdown: 0,
+        regime: 'RANGE',
+        bidsRatio: 0.5,
+        asksRatio: 0.5,
+        loopCount: 0
     };
 
     const els = {
-        price: document.getElementById('mainPrice'),
-        connect: document.getElementById('connectStatus'),
         term: document.getElementById('terminal'),
+        price: document.getElementById('mainPrice'),
+        status: document.getElementById('connectStatus'),
+        sessionTag: document.getElementById('sessionTag'),
+        startBtn: document.getElementById('startBtn'),
+        stopBtn: document.getElementById('stopBtn'),
         omegaVal: document.getElementById('omegaVal'),
         omegaText: document.getElementById('omegaText'),
         portfolioVal: document.getElementById('portfolioVal'),
         roiVal: document.getElementById('roiVal'),
-        positionStatus: document.getElementById('positionStatus'),
-        flowVal: document.getElementById('flowVal'),
+        roiText: document.getElementById('roiText'),
+        alphaMeta: document.getElementById('alphaMeta'),
         liqVal: document.getElementById('liqVal'),
+        liqText: document.getElementById('liqText'),
+        liqBids: document.getElementById('liqBids'),
+        liqAsks: document.getElementById('liqAsks'),
         wealthTotal: document.getElementById('wealthTotal'),
-        execStatus: document.getElementById('execStatus'),
-        startBtn: document.getElementById('startBtn'),
-        stopBtn: document.getElementById('stopBtn')
+        xrpInput: document.getElementById('xrpInput'),
+        usdtInput: document.getElementById('usdtInput'),
+        xrpBalanceLabel: document.getElementById('xrpBalanceLabel'),
+        usdtBalanceLabel: document.getElementById('usdtBalanceLabel'),
+        regimeTag: document.getElementById('regimeTag'),
+        singularityBox: document.getElementById('singularityBox'),
+        tradeMarker: document.getElementById('tradeMarker')
     };
 
     const canvas = document.getElementById('nexus');
     const ctx = canvas.getContext('2d');
-    let width = 0;
-    let height = 0;
+    let width, height;
     let particles = [];
 
     function resizeCanvas() {
@@ -445,24 +489,28 @@
         ctx.fillStyle = 'rgba(5, 8, 16, 0.15)';
         ctx.fillRect(0, 0, width, height);
 
-        const omegaDrift = (state.omega - 50) / 50;
-        const baseColor = omegaDrift >= 0
-            ? { r: 204, g: 255, b: 0 }
-            : { r: 255, g: 42, b: 109 };
+        const pulse = state.omega >= 50 ? { r: 204, g: 255, b: 0 } : { r: 255, g: 42, b: 109 };
+        const extreme = state.omega > 80 || state.omega < 20;
+        const intensity = extreme ? 1.5 : 1;
 
         particles.forEach((p, i) => {
-            p.x += p.vx;
-            p.y += p.vy;
+            p.x += p.vx * intensity;
+            p.y += p.vy * intensity;
+
+            if (extreme) {
+                p.x += (Math.random() - 0.5) * 2;
+                p.y += (Math.random() - 0.5) * 2;
+            }
 
             if (p.x < 0 || p.x > width) p.vx *= -1;
             if (p.y < 0 || p.y > height) p.vy *= -1;
 
-            p.phase += 0.05;
-            const currentSize = p.size + Math.sin(p.phase) * 0.5;
+            p.phase += 0.05 * intensity;
+            const currentSize = (p.size + Math.sin(p.phase) * 0.5) * (0.9 + (intensity - 1) * 0.35);
 
             ctx.beginPath();
             ctx.arc(p.x, p.y, Math.max(0, currentSize), 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, 0.8)`;
+            ctx.fillStyle = `rgba(${pulse.r}, ${pulse.g}, ${pulse.b}, ${0.7 + (intensity - 1) * 0.3})`;
             ctx.fill();
 
             for (let j = i + 1; j < particles.length; j++) {
@@ -470,12 +518,11 @@
                 const dx = p.x - p2.x;
                 const dy = p.y - p2.y;
                 const distSq = dx * dx + dy * dy;
-
                 if (distSq < 10000) {
-                    const alpha = 1 - (distSq / 10000);
+                    const alpha = (1 - (distSq / 10000)) * (0.4 + (intensity - 1) * 0.25);
                     ctx.beginPath();
-                    ctx.strokeStyle = `rgba(${baseColor.r}, ${baseColor.g}, ${baseColor.b}, ${alpha * 0.4})`;
-                    ctx.lineWidth = 0.5;
+                    ctx.strokeStyle = `rgba(${pulse.r}, ${pulse.g}, ${pulse.b}, ${alpha})`;
+                    ctx.lineWidth = 0.5 + ((intensity - 1) * 0.2);
                     ctx.moveTo(p.x, p.y);
                     ctx.lineTo(p2.x, p2.y);
                     ctx.stroke();
@@ -486,155 +533,8 @@
         requestAnimationFrame(drawNexus);
     }
 
-    async function fetchTickerPrice() {
-        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=XRPUSDT');
-        if (!res.ok) throw new Error('Ticker unavailable');
-        const data = await res.json();
-        state.price = parseFloat(data.price);
-    }
-
-    async function fetchOrderBook() {
-        const res = await fetch('https://api.binance.com/api/v3/depth?symbol=XRPUSDT&limit=500');
-        if (!res.ok) throw new Error('Order book unavailable');
-        const data = await res.json();
-
-        let totalBids = 0;
-        let totalAsks = 0;
-
-        data.bids.forEach(level => {
-            totalBids += parseFloat(level[1]);
-        });
-
-        data.asks.forEach(level => {
-            totalAsks += parseFloat(level[1]);
-        });
-
-        const den = totalBids + totalAsks;
-        state.liqImbalance = den === 0 ? 0 : (totalBids - totalAsks) / den;
-
-        if (Math.abs(state.liqImbalance) > 0.4) {
-            const now = Date.now();
-            if (now - state.lastWallAlertAt > 12000) {
-                log('LIQUIDITY WALL DETECTED', 'warn');
-                state.lastWallAlertAt = now;
-            }
-        }
-    }
-
-    async function fetchTrades() {
-        const res = await fetch('https://api.binance.com/api/v3/trades?symbol=XRPUSDT&limit=500');
-        if (!res.ok) throw new Error('Trades unavailable');
-        const trades = await res.json();
-
-        let buyQty = 0;
-        let sellQty = 0;
-
-        trades.forEach(t => {
-            const qty = parseFloat(t.qty);
-            if (t.isBuyerMaker === false) {
-                buyQty += qty;
-            } else {
-                sellQty += qty;
-            }
-        });
-
-        state.flowDelta = buyQty - sellQty;
-    }
-
     function clamp(value, min, max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    function computeOmega() {
-        const priceVelocity = state.price - state.lastPrice;
-        const rawOmega = (state.flowDelta * state.liqImbalance) - (priceVelocity * 10);
-        state.omega = clamp(50 + rawOmega, 0, 100);
-        state.lastPrice = state.price;
-    }
-
-    function runTradingLogic() {
-        if (!state.active) return;
-
-        if (state.omega > 85 && state.position === 'USDT' && state.balanceUSDT > 0) {
-            const usdtToSpend = state.balanceUSDT;
-            const grossXrp = usdtToSpend / state.price;
-            const feeXrp = grossXrp * FEE_RATE;
-            const netXrp = grossXrp - feeXrp;
-
-            state.balanceXRP += netXrp;
-            state.balanceUSDT = 0;
-            state.position = 'XRP';
-
-            logTrade('BUY', state.price, feeXrp, 'XRP');
-        }
-
-        if (state.omega < 15 && state.position === 'XRP' && state.balanceXRP > 0) {
-            const xrpToSell = state.balanceXRP;
-            const grossUsdt = xrpToSell * state.price;
-            const feeUsdt = grossUsdt * FEE_RATE;
-            const netUsdt = grossUsdt - feeUsdt;
-
-            state.balanceUSDT += netUsdt;
-            state.balanceXRP = 0;
-            state.position = 'USDT';
-
-            logTrade('SELL', state.price, feeUsdt, 'USDT');
-        }
-    }
-
-    function logTrade(side, price, feeValue, feeAsset) {
-        const info = `${side} @ ${price.toFixed(5)} | Fee: ${feeValue.toFixed(5)} ${feeAsset} | Balances => XRP ${state.balanceXRP.toFixed(4)} / USDT ${state.balanceUSDT.toFixed(4)}`;
-        log(info, side === 'BUY' ? 'ai' : 'warn');
-    }
-
-    function getPortfolioValueUSD() {
-        return state.balanceUSDT + (state.balanceXRP * state.price);
-    }
-
-    function updateUI() {
-        els.price.innerText = state.price ? state.price.toFixed(5) : '0.00000';
-
-        els.omegaVal.innerText = state.omega.toFixed(2);
-        if (state.omega > 85) {
-            els.omegaVal.style.color = '#ccff00';
-            els.omegaText.textContent = 'ENTRY BIAS > 85';
-        } else if (state.omega < 15) {
-            els.omegaVal.style.color = '#ff2a6d';
-            els.omegaText.textContent = 'EXIT BIAS < 15';
-        } else {
-            els.omegaVal.style.color = 'white';
-            els.omegaText.textContent = 'NEUTRAL FIELD';
-        }
-
-        els.flowVal.innerText = state.flowDelta.toFixed(2);
-        els.liqVal.innerText = `LIQ: ${state.liqImbalance.toFixed(4)}`;
-
-        const portfolio = getPortfolioValueUSD();
-        els.portfolioVal.innerText = `$${portfolio.toFixed(2)}`;
-        els.wealthTotal.innerText = `$${portfolio.toFixed(2)}`;
-        els.positionStatus.innerText = `POSITION: ${state.position}`;
-
-        if (state.initialValueUSD === null && state.price > 0) {
-            state.initialValueUSD = portfolio;
-            log(`INITIAL VALUE LOCKED: $${state.initialValueUSD.toFixed(2)}`, 'normal');
-        }
-
-        let roi = 0;
-        if (state.initialValueUSD && state.initialValueUSD > 0) {
-            roi = ((portfolio - state.initialValueUSD) / state.initialValueUSD) * 100;
-        }
-        els.roiVal.innerText = `${roi.toFixed(2)}%`;
-        els.roiVal.style.color = roi >= 0 ? '#ccff00' : '#ff2a6d';
-    }
-
-    function updateExecutionStatus() {
-        if (state.active) {
-            els.execStatus.innerText = 'EXECUTING';
-            els.execStatus.classList.add('live');
-        } else {
-            els.execStatus.innerText = 'STANDBY';
-            els.execStatus.classList.remove('live');
-        }
+        return Math.min(max, Math.max(min, value));
     }
 
     function log(msg, type = 'normal') {
@@ -642,54 +542,374 @@
         div.className = `log-line ${type}`;
         div.innerText = msg;
         els.term.prepend(div);
-        if (els.term.children.length > 12) els.term.lastChild.remove();
-    }
-
-    async function tick() {
-        try {
-            await Promise.all([fetchTickerPrice(), fetchOrderBook(), fetchTrades()]);
-            computeOmega();
-            runTradingLogic();
-            updateUI();
-
-            els.connect.innerText = 'PUBLIC BINANCE FEED ONLINE';
-            els.connect.style.color = '#00f3ff';
-            els.connect.style.borderColor = '#00f3ff';
-        } catch (err) {
-            els.connect.innerText = 'FEED DEGRADED - RETRYING';
-            els.connect.style.color = '#ff2a6d';
-            els.connect.style.borderColor = '#ff2a6d';
-            log(`DATA LOOP WARNING: ${err.message}`, 'warn');
+        if (els.term.children.length > 18) {
+            els.term.lastChild.remove();
         }
     }
 
-    function attachControls() {
+    function formatUSD(n) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            maximumFractionDigits: 2
+        }).format(n);
+    }
+
+    function updateSessionTag() {
+        if (state.active) {
+            els.sessionTag.textContent = 'EXECUTING';
+            els.sessionTag.classList.add('executing');
+            els.status.textContent = 'LIVE LOOP // EXECUTING';
+            els.status.style.color = '#ccff00';
+            els.status.style.borderColor = '#ccff00';
+        } else {
+            els.sessionTag.textContent = 'STANDBY';
+            els.sessionTag.classList.remove('executing');
+            els.status.textContent = 'STANDBY // NO EXECUTION';
+            els.status.style.color = '#777';
+            els.status.style.borderColor = '#333';
+        }
+    }
+
+    function flashExecution(type) {
+        els.singularityBox.classList.remove('flash-buy', 'flash-sell');
+        void els.singularityBox.offsetWidth;
+        els.singularityBox.classList.add(type === 'buy' ? 'flash-buy' : 'flash-sell');
+        setTimeout(() => {
+            els.singularityBox.classList.remove('flash-buy', 'flash-sell');
+        }, 700);
+    }
+
+    function showTradeMarker(type) {
+        els.tradeMarker.className = 'trade-marker';
+        void els.tradeMarker.offsetWidth;
+        if (type === 'buy') {
+            els.tradeMarker.textContent = '+ BUY';
+            els.tradeMarker.classList.add('buy');
+        } else {
+            els.tradeMarker.textContent = '- SELL';
+            els.tradeMarker.classList.add('sell');
+        }
+    }
+
+    function getPortfolioValueUSD() {
+        const xrpLeg = Math.max(0, state.balanceXRP) * Math.max(0, state.price);
+        const usdtLeg = Math.max(0, state.balanceUSDT);
+        return usdtLeg + xrpLeg;
+    }
+
+    function updateDrawdown(portfolioValue) {
+        if (portfolioValue > state.maxPortfolioValue) {
+            state.maxPortfolioValue = portfolioValue;
+        }
+
+        if (state.maxPortfolioValue > 0 && portfolioValue < state.maxPortfolioValue) {
+            const drawdown = (portfolioValue - state.maxPortfolioValue) / state.maxPortfolioValue;
+            state.maxDrawdown = Math.min(state.maxDrawdown, drawdown);
+        }
+    }
+
+    function updatePortfolioUI() {
+        const value = getPortfolioValueUSD();
+        if (state.initialValueUSD === null && state.price > 0) {
+            state.initialValueUSD = value;
+            state.maxPortfolioValue = value;
+        }
+
+        state.holdValue = 1000 * state.price;
+        updateDrawdown(value);
+
+        const roi = state.initialValueUSD ? ((value - state.initialValueUSD) / state.initialValueUSD) * 100 : 0;
+        const alphaEdge = value - state.holdValue;
+
+        els.portfolioVal.textContent = formatUSD(value);
+        els.wealthTotal.textContent = formatUSD(value);
+
+        els.roiVal.textContent = `${roi.toFixed(2)}%`;
+        els.alphaMeta.textContent = `EDGE: ${formatUSD(alphaEdge)} | MAX DD: ${(state.maxDrawdown * 100).toFixed(2)}%`;
+
+        if (alphaEdge > 0) {
+            els.roiVal.style.color = 'var(--acid)';
+            els.roiText.textContent = 'ALPHA EDGE +';
+            els.alphaMeta.style.color = 'var(--acid)';
+        } else if (alphaEdge < 0) {
+            els.roiVal.style.color = 'var(--danger)';
+            els.roiText.textContent = 'ALPHA EDGE -';
+            els.alphaMeta.style.color = 'var(--danger)';
+        } else {
+            els.roiVal.style.color = 'white';
+            els.roiText.textContent = 'BASELINE';
+            els.alphaMeta.style.color = '#8a8a8a';
+        }
+
+        state.balanceXRP = Math.max(0, state.balanceXRP);
+        state.balanceUSDT = Math.max(0, state.balanceUSDT);
+
+        els.xrpInput.value = state.balanceXRP.toFixed(4);
+        els.usdtInput.value = state.balanceUSDT.toFixed(4);
+        els.xrpBalanceLabel.textContent = `${state.balanceXRP.toFixed(4)} XRP`;
+        els.usdtBalanceLabel.textContent = `${state.balanceUSDT.toFixed(4)} USDT`;
+    }
+
+    function updateRegimeUI() {
+        els.regimeTag.textContent = state.regime;
+        els.regimeTag.classList.remove('range', 'trend', 'chaos');
+        if (state.regime === 'RANGE') els.regimeTag.classList.add('range');
+        if (state.regime === 'TREND') els.regimeTag.classList.add('trend');
+        if (state.regime === 'CHAOS') els.regimeTag.classList.add('chaos');
+    }
+
+    function updateLiquidityBar() {
+        const bidsWidth = clamp(state.bidsRatio * 100, 0, 100);
+        const asksWidth = clamp(state.asksRatio * 100, 0, 100);
+        els.liqBids.style.width = `${bidsWidth}%`;
+        els.liqAsks.style.width = `${asksWidth}%`;
+    }
+
+    function updateOmegaUI() {
+        els.omegaVal.textContent = state.omega.toFixed(2);
+
+        if (state.omega > 85) {
+            els.omegaVal.style.color = '#ccff00';
+            els.omegaText.textContent = 'BUY PRESSURE';
+        } else if (state.omega < 15) {
+            els.omegaVal.style.color = '#ff2a6d';
+            els.omegaText.textContent = 'SELL PRESSURE';
+        } else {
+            els.omegaVal.style.color = 'white';
+            els.omegaText.textContent = 'NEUTRAL FLOW';
+        }
+
+        const liqPct = state.liqImbalance * 100;
+        els.liqVal.textContent = `${liqPct.toFixed(2)}%`;
+        if (Math.abs(state.liqImbalance) > 0.4) {
+            els.liqVal.style.color = '#ff2a6d';
+            els.liqText.textContent = 'WALL DETECTED';
+        } else {
+            els.liqVal.style.color = '#00f3ff';
+            els.liqText.textContent = 'BALANCED';
+        }
+
+        updateRegimeUI();
+        updateLiquidityBar();
+    }
+
+    async function fetchTicker() {
+        const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
+        if (!res.ok) throw new Error('ticker error');
+        const data = await res.json();
+        state.price = parseFloat(data.lastPrice);
+        state.volume = parseFloat(data.quoteVolume);
+        state.change24h = parseFloat(data.priceChangePercent);
+        els.price.textContent = `$${state.price.toFixed(4)}`;
+    }
+
+    async function fetchOrderBook() {
+        const res = await fetch('https://api.binance.com/api/v3/depth?symbol=XRPUSDT&limit=500');
+        if (!res.ok) throw new Error('depth error');
+        const data = await res.json();
+
+        const bidsTop50 = data.bids.slice(0, 50);
+        const asksTop50 = data.asks.slice(0, 50);
+
+        const totalBids = bidsTop50.reduce((sum, level) => sum + parseFloat(level[1]), 0);
+        const totalAsks = asksTop50.reduce((sum, level) => sum + parseFloat(level[1]), 0);
+        const total = totalBids + totalAsks;
+
+        const newImbalance = total === 0 ? 0 : (totalBids - totalAsks) / total;
+        state.liqImbalance = (state.liqImbalance * 0.6) + (newImbalance * 0.4);
+
+        state.bidsRatio = total === 0 ? 0.5 : totalBids / total;
+        state.asksRatio = total === 0 ? 0.5 : totalAsks / total;
+
+        if (Math.abs(state.liqImbalance) > 0.4) {
+            log('LIQUIDITY WALL DETECTED', 'warn');
+        }
+    }
+
+    async function fetchTrades() {
+        const res = await fetch('https://api.binance.com/api/v3/trades?symbol=XRPUSDT&limit=500');
+        if (!res.ok) throw new Error('trades error');
+        const trades = await res.json();
+
+        let weightedDelta = 0;
+        for (const trade of trades) {
+            const qty = parseFloat(trade.qty);
+            weightedDelta += qty * (trade.isBuyerMaker ? -1 : 1);
+        }
+
+        state.flowDelta = weightedDelta;
+        state.flowDeltaNorm = state.volume > 0 ? weightedDelta / state.volume : 0;
+    }
+
+    function trimHistory() {
+        if (state.omegaHistory.length > 20) state.omegaHistory.shift();
+        if (state.flowHistory.length > 20) state.flowHistory.shift();
+        if (state.liqHistory.length > 20) state.liqHistory.shift();
+        if (state.volHistory.length > 10) state.volHistory.shift();
+    }
+
+    function computeOmega() {
+        const priceVelocity = (state.lastPrice > 0) ? ((state.price - state.lastPrice) / state.lastPrice) : 0;
+        state.priceVelocity = priceVelocity;
+
+        state.omegaHistory.push(state.omega);
+        state.flowHistory.push(state.flowDeltaNorm);
+        state.liqHistory.push(state.liqImbalance);
+        state.volHistory.push(Math.abs(state.priceVelocity));
+        trimHistory();
+
+        const firstOmega = state.omegaHistory[0] ?? state.omega;
+        const lastOmega = state.omegaHistory[state.omegaHistory.length - 1] ?? state.omega;
+        const omegaSlope = lastOmega - firstOmega;
+
+        const slopeAbs = Math.abs(omegaSlope);
+        if (slopeAbs < 5) state.regime = 'RANGE';
+        else if (slopeAbs <= 15) state.regime = 'TREND';
+        else state.regime = 'CHAOS';
+
+        const rawOmega =
+            (state.flowDeltaNorm * state.liqImbalance)
+            - (priceVelocity * 10)
+            + (omegaSlope * 0.5);
+
+        const clipped = clamp(50 + rawOmega, 0, 100);
+        state.omega = (clipped * 0.3) + (state.omega * 0.7);
+        state.lastPrice = state.price;
+    }
+
+    function executeBuy() {
+        if (state.balanceUSDT <= 0 || state.price <= 0) return;
+
+        const fraction = state.omega > 90 ? 1 : 0.5;
+        const spendUSDT = Math.max(0, state.balanceUSDT * fraction);
+        const fillPrice = state.price * (1 + SLIPPAGE);
+
+        const grossXRP = spendUSDT / fillPrice;
+        const feeXRP = grossXRP * FEE_RATE;
+        const netXRP = Math.max(0, grossXRP - feeXRP);
+
+        state.balanceUSDT = Math.max(0, state.balanceUSDT - spendUSDT);
+        state.balanceXRP = Math.max(0, state.balanceXRP + netXRP);
+        state.position = state.balanceUSDT > 0.0000001 ? 'MIXED' : 'XRP';
+        state.lastTradeTime = Date.now();
+
+        flashExecution('buy');
+        showTradeMarker('buy');
+        log(`BUY @ ${fillPrice.toFixed(4)} | Fee ${feeXRP.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'ai');
+    }
+
+    function executeSell() {
+        if (state.balanceXRP <= 0 || state.price <= 0) return;
+
+        const fraction = state.omega < 10 ? 1 : 0.5;
+        const sellXRP = Math.max(0, state.balanceXRP * fraction);
+        const fillPrice = state.price * (1 - SLIPPAGE);
+
+        const grossUSDT = sellXRP * fillPrice;
+        const feeUSDT = grossUSDT * FEE_RATE;
+        const netUSDT = Math.max(0, grossUSDT - feeUSDT);
+
+        state.balanceXRP = Math.max(0, state.balanceXRP - sellXRP);
+        state.balanceUSDT = Math.max(0, state.balanceUSDT + netUSDT);
+        state.position = state.balanceXRP > 0.0000001 ? 'MIXED' : 'USDT';
+        state.lastTradeTime = Date.now();
+
+        flashExecution('sell');
+        showTradeMarker('sell');
+        log(`SELL @ ${fillPrice.toFixed(4)} | Fee ${feeUSDT.toFixed(4)} USDT | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'warn');
+    }
+
+    function runTradingLogic() {
+        if (!state.active) return;
+
+        const avgVol = state.volHistory.length
+            ? state.volHistory.reduce((sum, v) => sum + v, 0) / state.volHistory.length
+            : 0;
+
+        if (avgVol > 0.008) {
+            log('VOLATILITY SPIKE — EXECUTION PAUSED', 'warn');
+            state.omegaConfirm = 0;
+            return;
+        }
+
+        if (Date.now() - state.lastTradeTime < 15000) {
+            return;
+        }
+
+        if (state.omega > 85 || state.omega < 15) {
+            state.omegaConfirm += 1;
+        } else {
+            state.omegaConfirm = 0;
+            return;
+        }
+
+        if (state.omegaConfirm < 2) return;
+
+        if (state.omega > 85 && state.balanceUSDT > 0) {
+            executeBuy();
+            state.omegaConfirm = 0;
+        } else if (state.omega < 15 && state.balanceXRP > 0) {
+            executeSell();
+            state.omegaConfirm = 0;
+        }
+    }
+
+    function heartbeat() {
+        const alphaEdge = getPortfolioValueUSD() - state.holdValue;
+        log(`SYSTEM HEARTBEAT: Alpha Edge ${formatUSD(alphaEdge)} | Regime: ${state.regime}`, 'normal');
+    }
+
+    async function dataLoop() {
+        try {
+            await fetchTicker();
+            await fetchOrderBook();
+            await fetchTrades();
+            computeOmega();
+            runTradingLogic();
+            updateOmegaUI();
+            updatePortfolioUI();
+
+            state.loopCount += 1;
+            if (state.loopCount % 5 === 0) heartbeat();
+        } catch (e) {
+            log(`DATA LOOP WARNING: ${e.message}`, 'warn');
+        }
+    }
+
+    function bindControls() {
         els.startBtn.addEventListener('click', () => {
             state.active = true;
-            updateExecutionStatus();
-            log('PROTOCOLO OMEGA ACTIVADO', 'ai');
+            updateSessionTag();
+            log('OMEGA PROTOCOL ACTIVATED', 'ai');
         });
 
         els.stopBtn.addEventListener('click', () => {
             state.active = false;
-            updateExecutionStatus();
-            log('SESIÓN TERMINADA - STANDBY', 'normal');
+            updateSessionTag();
+            log('SESSION TERMINATED // STANDBY', 'normal');
         });
     }
 
-    async function initSystem() {
+    function init() {
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         drawNexus();
-        attachControls();
-        updateExecutionStatus();
+        bindControls();
+        updateSessionTag();
+        updateRegimeUI();
+        updateLiquidityBar();
+        log('SIMULATION ONLY // NO REAL TRADING', 'normal');
+        log('PUBLIC BINANCE DATA LINK ONLINE', 'normal');
 
-        log('SIMULATION ONLY // NO REAL TRADING', 'warn');
-        log('BOOTING MICROSTRUCTURE ENGINE...', 'normal');
-
-        await tick();
-        setInterval(tick, 4000);
+        dataLoop();
+        setInterval(dataLoop, 4000);
     }
+
+    init();
+</script>
+</body>
+</html>
 
     initSystem();
 </script>
