@@ -172,6 +172,29 @@
         .metric-card .val { font-size: 1.4rem; font-weight: 700; margin-top: 10px; color: white; font-family: 'Syncopate'; }
         .metric-card .status { font-size: 0.6rem; color: var(--cyan); margin-top: 5px; opacity: 0.8; }
 
+        .regime-tag {
+            margin-top: 8px;
+            font-size: 0.6rem;
+            color: #a9a9a9;
+            letter-spacing: 1px;
+            border: 1px solid #2b2b2b;
+            display: inline-block;
+            padding: 3px 8px;
+            text-transform: uppercase;
+        }
+
+        .regime-tag.range { color: #96e7ff; border-color: rgba(0,243,255,0.3); }
+        .regime-tag.trend { color: var(--acid); border-color: rgba(204,255,0,0.4); }
+        .regime-tag.chaos { color: #ff88ac; border-color: rgba(255,42,109,0.45); }
+
+        .alpha-mini {
+            margin-top: 6px;
+            font-size: 0.58rem;
+            color: #8a8a8a;
+            line-height: 1.35;
+            letter-spacing: 0.5px;
+        }
+
         .singularity-container {
             position: relative;
             border: 1px solid var(--glass-border);
@@ -181,7 +204,42 @@
             overflow: hidden;
             border-radius: 2px;
             min-height: 400px;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
         }
+
+        .singularity-container.flash-buy {
+            border-color: rgba(204,255,0,0.65);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9), 0 0 40px rgba(204,255,0,0.5);
+        }
+
+        .singularity-container.flash-sell {
+            border-color: rgba(255,42,109,0.65);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9), 0 0 40px rgba(255,42,109,0.45);
+        }
+
+        .trade-marker {
+            position: absolute;
+            bottom: 24%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Syncopate', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 3;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .trade-marker.buy { color: var(--acid); animation: floatTrade 1s ease forwards; }
+        .trade-marker.sell { color: var(--danger); animation: floatTrade 1s ease forwards; }
+
+        @keyframes floatTrade {
+            0% { transform: translate(-50%, 8px); opacity: 0; }
+            20% { opacity: 1; }
+            100% { transform: translate(-50%, -40px); opacity: 0; }
+        }
+
         canvas#nexus { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; opacity: 0.8; }
 
         .center-data { z-index: 2; text-align: center; pointer-events: none; mix-blend-mode: screen; }
@@ -268,6 +326,7 @@
                 <h3>OMEGA INDEX</h3>
                 <div class="val" id="omegaVal">50.00</div>
                 <div class="status" id="omegaText">NEUTRAL FLOW</div>
+                <div class="regime-tag range" id="regimeTag">RANGE</div>
             </div>
             <div class="metric-card">
                 <h3>PORTFOLIO VALUE (USD)</h3>
@@ -278,6 +337,7 @@
                 <h3>ROI ALPHA %</h3>
                 <div class="val" id="roiVal">0.00%</div>
                 <div class="status" id="roiText">BASELINE</div>
+                <div class="alpha-mini" id="alphaMeta">BOT: $0.00 | HOLD: $0.00 | EDGE: $0.00</div>
             </div>
             <div class="metric-card">
                 <h3>LIQUIDITY IMBALANCE</h3>
@@ -286,8 +346,9 @@
             </div>
         </div>
 
-        <div class="singularity-container">
+        <div class="singularity-container" id="singularityBox">
             <canvas id="nexus"></canvas>
+            <div class="trade-marker" id="tradeMarker">+ BUY</div>
             <div class="center-data">
                 <div class="sub-price">XRPUSDT MARKET</div>
                 <div class="big-price" id="mainPrice">$0.0000</div>
@@ -319,8 +380,15 @@
         flowDelta: 0,
         liqImbalance: 0,
         lastPrice: 0,
+        priceVelocity: 0,
         volume: 0,
-        change24h: 0
+        change24h: 0,
+        omegaHistory: [],
+        flowHistory: [],
+        liqHistory: [],
+        lastTradeTime: 0,
+        holdValue: 0,
+        regime: 'RANGE'
     };
 
     const els = {
@@ -335,13 +403,17 @@
         portfolioVal: document.getElementById('portfolioVal'),
         roiVal: document.getElementById('roiVal'),
         roiText: document.getElementById('roiText'),
+        alphaMeta: document.getElementById('alphaMeta'),
         liqVal: document.getElementById('liqVal'),
         liqText: document.getElementById('liqText'),
         wealthTotal: document.getElementById('wealthTotal'),
         xrpInput: document.getElementById('xrpInput'),
         usdtInput: document.getElementById('usdtInput'),
         xrpBalanceLabel: document.getElementById('xrpBalanceLabel'),
-        usdtBalanceLabel: document.getElementById('usdtBalanceLabel')
+        usdtBalanceLabel: document.getElementById('usdtBalanceLabel'),
+        regimeTag: document.getElementById('regimeTag'),
+        singularityBox: document.getElementById('singularityBox'),
+        tradeMarker: document.getElementById('tradeMarker')
     };
 
     const canvas = document.getElementById('nexus');
@@ -371,20 +443,21 @@
         ctx.fillRect(0, 0, width, height);
 
         const pulse = state.omega >= 50 ? { r: 204, g: 255, b: 0 } : { r: 255, g: 42, b: 109 };
+        const intensity = (state.omega > 80 || state.omega < 20) ? 1.45 : 1;
 
         particles.forEach((p, i) => {
-            p.x += p.vx;
-            p.y += p.vy;
+            p.x += p.vx * intensity;
+            p.y += p.vy * intensity;
 
             if (p.x < 0 || p.x > width) p.vx *= -1;
             if (p.y < 0 || p.y > height) p.vy *= -1;
 
-            p.phase += 0.05;
-            const currentSize = p.size + Math.sin(p.phase) * 0.5;
+            p.phase += 0.05 * intensity;
+            const currentSize = (p.size + Math.sin(p.phase) * 0.5) * (0.9 + (intensity - 1) * 0.35);
 
             ctx.beginPath();
             ctx.arc(p.x, p.y, Math.max(0, currentSize), 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(${pulse.r}, ${pulse.g}, ${pulse.b}, 0.8)`;
+            ctx.fillStyle = `rgba(${pulse.r}, ${pulse.g}, ${pulse.b}, ${0.7 + (intensity - 1) * 0.3})`;
             ctx.fill();
 
             for (let j = i + 1; j < particles.length; j++) {
@@ -393,10 +466,10 @@
                 const dy = p.y - p2.y;
                 const distSq = dx * dx + dy * dy;
                 if (distSq < 10000) {
-                    const alpha = 1 - (distSq / 10000);
+                    const alpha = (1 - (distSq / 10000)) * (0.4 + (intensity - 1) * 0.25);
                     ctx.beginPath();
-                    ctx.strokeStyle = `rgba(${pulse.r}, ${pulse.g}, ${pulse.b}, ${alpha * 0.4})`;
-                    ctx.lineWidth = 0.5;
+                    ctx.strokeStyle = `rgba(${pulse.r}, ${pulse.g}, ${pulse.b}, ${alpha})`;
+                    ctx.lineWidth = 0.5 + ((intensity - 1) * 0.2);
                     ctx.moveTo(p.x, p.y);
                     ctx.lineTo(p2.x, p2.y);
                     ctx.stroke();
@@ -445,8 +518,31 @@
         }
     }
 
+    function flashExecution(type) {
+        els.singularityBox.classList.remove('flash-buy', 'flash-sell');
+        void els.singularityBox.offsetWidth;
+        els.singularityBox.classList.add(type === 'buy' ? 'flash-buy' : 'flash-sell');
+        setTimeout(() => {
+            els.singularityBox.classList.remove('flash-buy', 'flash-sell');
+        }, 700);
+    }
+
+    function showTradeMarker(type) {
+        els.tradeMarker.className = 'trade-marker';
+        void els.tradeMarker.offsetWidth;
+        if (type === 'buy') {
+            els.tradeMarker.textContent = '+ BUY';
+            els.tradeMarker.classList.add('buy');
+        } else {
+            els.tradeMarker.textContent = '- SELL';
+            els.tradeMarker.classList.add('sell');
+        }
+    }
+
     function getPortfolioValueUSD() {
-        return state.balanceUSDT + (state.balanceXRP * state.price);
+        const xrpLeg = Math.max(0, state.balanceXRP) * Math.max(0, state.price);
+        const usdtLeg = Math.max(0, state.balanceUSDT);
+        return usdtLeg + xrpLeg;
     }
 
     function updatePortfolioUI() {
@@ -455,27 +551,45 @@
             state.initialValueUSD = value;
         }
 
+        state.holdValue = 1000 * state.price;
         const roi = state.initialValueUSD ? ((value - state.initialValueUSD) / state.initialValueUSD) * 100 : 0;
+        const alphaEdge = value - state.holdValue;
 
         els.portfolioVal.textContent = formatUSD(value);
         els.wealthTotal.textContent = formatUSD(value);
 
         els.roiVal.textContent = `${roi.toFixed(2)}%`;
-        if (roi > 0) {
-            els.roiVal.style.color = '#ccff00';
-            els.roiText.textContent = 'ALPHA POSITIVE';
-        } else if (roi < 0) {
-            els.roiVal.style.color = '#ff2a6d';
-            els.roiText.textContent = 'DRAWDOWN';
+        els.alphaMeta.textContent = `BOT: ${formatUSD(value)} | HOLD: ${formatUSD(state.holdValue)} | EDGE: ${formatUSD(alphaEdge)}`;
+
+        if (alphaEdge > 0) {
+            els.roiVal.style.color = 'var(--acid)';
+            els.roiText.textContent = 'ALPHA EDGE +';
+            els.alphaMeta.style.color = 'var(--acid)';
+        } else if (alphaEdge < 0) {
+            els.roiVal.style.color = 'var(--danger)';
+            els.roiText.textContent = 'ALPHA EDGE -';
+            els.alphaMeta.style.color = 'var(--danger)';
         } else {
             els.roiVal.style.color = 'white';
             els.roiText.textContent = 'BASELINE';
+            els.alphaMeta.style.color = '#8a8a8a';
         }
+
+        state.balanceXRP = Math.max(0, state.balanceXRP);
+        state.balanceUSDT = Math.max(0, state.balanceUSDT);
 
         els.xrpInput.value = state.balanceXRP.toFixed(4);
         els.usdtInput.value = state.balanceUSDT.toFixed(4);
         els.xrpBalanceLabel.textContent = `${state.balanceXRP.toFixed(4)} XRP`;
         els.usdtBalanceLabel.textContent = `${state.balanceUSDT.toFixed(4)} USDT`;
+    }
+
+    function updateRegimeUI() {
+        els.regimeTag.textContent = state.regime;
+        els.regimeTag.classList.remove('range', 'trend', 'chaos');
+        if (state.regime === 'RANGE') els.regimeTag.classList.add('range');
+        if (state.regime === 'TREND') els.regimeTag.classList.add('trend');
+        if (state.regime === 'CHAOS') els.regimeTag.classList.add('chaos');
     }
 
     function updateOmegaUI() {
@@ -501,6 +615,8 @@
             els.liqVal.style.color = '#00f3ff';
             els.liqText.textContent = 'BALANCED';
         }
+
+        updateRegimeUI();
     }
 
     async function fetchTicker() {
@@ -518,8 +634,11 @@
         if (!res.ok) throw new Error('depth error');
         const data = await res.json();
 
-        const totalBids = data.bids.reduce((sum, level) => sum + parseFloat(level[1]), 0);
-        const totalAsks = data.asks.reduce((sum, level) => sum + parseFloat(level[1]), 0);
+        const bidsTop50 = data.bids.slice(0, 50);
+        const asksTop50 = data.asks.slice(0, 50);
+
+        const totalBids = bidsTop50.reduce((sum, level) => sum + parseFloat(level[1]), 0);
+        const totalAsks = asksTop50.reduce((sum, level) => sum + parseFloat(level[1]), 0);
         const total = totalBids + totalAsks;
 
         state.liqImbalance = total === 0 ? 0 : (totalBids - totalAsks) / total;
@@ -534,25 +653,50 @@
         if (!res.ok) throw new Error('trades error');
         const trades = await res.json();
 
-        let buyQty = 0;
-        let sellQty = 0;
-
-        trades.forEach((trade) => {
+        let weightedDelta = 0;
+        for (const trade of trades) {
             const qty = parseFloat(trade.qty);
-            if (trade.isBuyerMaker === false) {
-                buyQty += qty;
-            } else {
-                sellQty += qty;
-            }
-        });
+            weightedDelta += qty * (trade.isBuyerMaker ? -1 : 1);
+        }
 
-        state.flowDelta = buyQty - sellQty;
+        state.flowDelta = weightedDelta;
+    }
+
+    function trimHistory() {
+        if (state.omegaHistory.length > 20) state.omegaHistory.shift();
+        if (state.flowHistory.length > 20) state.flowHistory.shift();
+        if (state.liqHistory.length > 20) state.liqHistory.shift();
     }
 
     function computeOmega() {
-        const priceVelocity = state.lastPrice === 0 ? 0 : (state.price - state.lastPrice);
-        const rawOmega = (state.flowDelta * state.liqImbalance) - (priceVelocity * 10);
-        state.omega = clamp(50 + rawOmega, 0, 100);
+        const priceVelocity = (state.lastPrice > 0) ? ((state.price - state.lastPrice) / state.lastPrice) : 0;
+        state.priceVelocity = priceVelocity;
+
+        state.omegaHistory.push(state.omega);
+        state.flowHistory.push(state.flowDelta);
+        state.liqHistory.push(state.liqImbalance);
+        trimHistory();
+
+        const firstOmega = state.omegaHistory[0] ?? state.omega;
+        const lastOmega = state.omegaHistory[state.omegaHistory.length - 1] ?? state.omega;
+        const omegaSlope = lastOmega - firstOmega;
+
+        const slopeAbs = Math.abs(omegaSlope);
+        if (slopeAbs < 5) {
+            state.regime = 'RANGE';
+        } else if (slopeAbs <= 15) {
+            state.regime = 'TREND';
+        } else {
+            state.regime = 'CHAOS';
+        }
+
+        const rawOmega =
+            (state.flowDelta * state.liqImbalance)
+            - (priceVelocity * 10)
+            + (omegaSlope * 0.5);
+
+        const clipped = clamp(50 + rawOmega, 0, 100);
+        state.omega = (clipped * 0.3) + (state.omega * 0.7);
         state.lastPrice = state.price;
     }
 
@@ -561,12 +705,15 @@
 
         const grossXrp = state.balanceUSDT / state.price;
         const feeXrp = grossXrp * FEE_RATE;
-        const netXrp = grossXrp - feeXrp;
+        const netXrp = Math.max(0, grossXrp - feeXrp);
 
         state.balanceUSDT = 0;
-        state.balanceXRP += netXrp;
+        state.balanceXRP = Math.max(0, state.balanceXRP + netXrp);
         state.position = 'XRP';
+        state.lastTradeTime = Date.now();
 
+        flashExecution('buy');
+        showTradeMarker('buy');
         log(`BUY @ ${state.price.toFixed(4)} | Fee ${feeXrp.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'ai');
     }
 
@@ -575,17 +722,29 @@
 
         const grossUsdt = state.balanceXRP * state.price;
         const feeUsdt = grossUsdt * FEE_RATE;
-        const netUsdt = grossUsdt - feeUsdt;
+        const netUsdt = Math.max(0, grossUsdt - feeUsdt);
 
         state.balanceXRP = 0;
-        state.balanceUSDT += netUsdt;
+        state.balanceUSDT = Math.max(0, state.balanceUSDT + netUsdt);
         state.position = 'USDT';
+        state.lastTradeTime = Date.now();
 
+        flashExecution('sell');
+        showTradeMarker('sell');
         log(`SELL @ ${state.price.toFixed(4)} | Fee ${feeUsdt.toFixed(4)} USDT | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'warn');
     }
 
     function runTradingLogic() {
         if (!state.active) return;
+
+        if (Math.abs(state.priceVelocity) > 0.008) {
+            log('VOLATILITY SPIKE — EXECUTION PAUSED', 'warn');
+            return;
+        }
+
+        if (Date.now() - state.lastTradeTime < 15000) {
+            return;
+        }
 
         if (state.omega > 85 && state.position === 'USDT') {
             executeBuy();
@@ -630,6 +789,7 @@
         drawNexus();
         bindControls();
         updateSessionTag();
+        updateRegimeUI();
         log('SIMULATION ONLY // NO REAL TRADING', 'normal');
         log('PUBLIC BINANCE DATA LINK ONLINE', 'normal');
 
