@@ -28,6 +28,7 @@
             overflow-y: auto;
             background-image: radial-gradient(circle at 50% 50%, #0a0f1e 0%, #000 100%);
             min-height: 100vh;
+            height: auto;
         }
 
         body::before {
@@ -89,6 +90,20 @@
             border-color: rgba(204,255,0,0.65);
             box-shadow: 0 0 18px rgba(204,255,0,0.4);
             text-shadow: 0 0 8px rgba(204,255,0,0.5);
+        }
+
+        .btc-correlation {
+            margin-top: 10px;
+            font-size: 0.62rem;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            color: #8f8f8f;
+        }
+
+        .btc-correlation span {
+            margin-left: 5px;
+            color: #00f3ff;
+            text-shadow: 0 0 8px rgba(0,243,255,0.5);
         }
 
         .control-group label { display: flex; justify-content: space-between; font-size: 0.7rem; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
@@ -192,6 +207,40 @@
             font-size: 0.58rem;
             color: #8a8a8a;
             line-height: 1.35;
+            letter-spacing: 0.5px;
+        }
+
+        .persist-mini {
+            margin-top: 6px;
+            font-size: 0.56rem;
+            color: #8a8a8a;
+            letter-spacing: 0.5px;
+        }
+
+        .persist-bar {
+            margin-top: 6px;
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .persist-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 0;
+            background: linear-gradient(90deg, rgba(0,243,255,0.3), rgba(204,255,0,0.85));
+            transition: width 0.5s ease;
+        }
+
+        .entropy-mini {
+            margin-top: 6px;
+            font-size: 0.58rem;
+            color: #8a8a8a;
             letter-spacing: 0.5px;
         }
 
@@ -331,6 +380,7 @@
         <div class="header">
             <div class="logo">OMEGA <span>INTERFACE</span></div>
             <div class="header-tag" id="sessionTag">STANDBY</div>
+            <div class="btc-correlation">BTC CORRELATION: <span id="btcStatus">SAFE</span></div>
         </div>
 
         <div class="control-group">
@@ -358,6 +408,9 @@
                 <div class="val" id="omegaVal">50.00</div>
                 <div class="status" id="omegaText">NEUTRAL FLOW</div>
                 <div class="regime-tag range" id="regimeTag">RANGE</div>
+                <div class="persist-mini" id="persistText">P(persist): 0%</div>
+                <div class="persist-bar"><div class="persist-fill" id="persistFill"></div></div>
+                <div class="entropy-mini" id="entropyVal">ENTROPY: 0.00</div>
             </div>
             <div class="metric-card">
                 <h3>PORTFOLIO VALUE (USD)</h3>
@@ -433,8 +486,17 @@
         regime: 'RANGE',
         bidsRatio: 0.5,
         asksRatio: 0.5,
-        loopCount: 0
+        loopCount: 0,
+        entropyHistory: [],
+        regimeDuration: 0,
+        persistenceProb: 0,
+        btcPrice: null,
+        btcVelocity: 0,
+        crossShock: false,
+        entropyBlocked: false
     };
+
+    let previousRegime = state.regime;
 
     const els = {
         term: document.getElementById('terminal'),
@@ -460,7 +522,11 @@
         usdtBalanceLabel: document.getElementById('usdtBalanceLabel'),
         regimeTag: document.getElementById('regimeTag'),
         singularityBox: document.getElementById('singularityBox'),
-        tradeMarker: document.getElementById('tradeMarker')
+        tradeMarker: document.getElementById('tradeMarker'),
+        persistText: document.getElementById('persistText'),
+        persistFill: document.getElementById('persistFill'),
+        entropyVal: document.getElementById('entropyVal'),
+        btcStatus: document.getElementById('btcStatus')
     };
 
     const canvas = document.getElementById('nexus');
@@ -657,6 +723,21 @@
         if (state.regime === 'RANGE') els.regimeTag.classList.add('range');
         if (state.regime === 'TREND') els.regimeTag.classList.add('trend');
         if (state.regime === 'CHAOS') els.regimeTag.classList.add('chaos');
+
+        els.persistText.textContent = `P(persist): ${(state.persistenceProb * 100).toFixed(0)}%`;
+        els.persistFill.style.width = `${clamp(state.persistenceProb * 100, 0, 100)}%`;
+    }
+
+    function updateBTCStatusUI() {
+        if (state.crossShock) {
+            els.btcStatus.textContent = 'SHOCK';
+            els.btcStatus.style.color = '#ff2a6d';
+            els.btcStatus.style.textShadow = '0 0 8px rgba(255,42,109,0.55)';
+            return;
+        }
+        els.btcStatus.textContent = 'SAFE';
+        els.btcStatus.style.color = '#ccff00';
+        els.btcStatus.style.textShadow = '0 0 8px rgba(204,255,0,0.55)';
     }
 
     function updateLiquidityBar() {
@@ -690,8 +771,14 @@
             els.liqText.textContent = 'BALANCED';
         }
 
+        const entropyVal = getEntropyValue();
+        const entropyColor = entropyVal > 0.8 ? '#ff2a6d' : (entropyVal < 0.5 ? '#ccff00' : '#8a8a8a');
+        els.entropyVal.textContent = `ENTROPY: ${entropyVal.toFixed(2)}`;
+        els.entropyVal.style.color = entropyColor;
+
         updateRegimeUI();
         updateLiquidityBar();
+        updateBTCStatusUI();
     }
 
     async function fetchTicker() {
@@ -740,6 +827,32 @@
 
         state.flowDelta = weightedDelta;
         state.flowDeltaNorm = state.volume > 0 ? weightedDelta / state.volume : 0;
+
+        if (trades.length > 0) {
+            const lastTrade = trades[trades.length - 1];
+            state.price = parseFloat(lastTrade.price);
+            const totalQuoteVolume = trades.reduce((sum, trade) => {
+                return sum + (parseFloat(trade.price) * parseFloat(trade.qty));
+            }, 0);
+            state.volume = totalQuoteVolume;
+            els.price.textContent = `$${state.price.toFixed(4)}`;
+        }
+    }
+
+    async function fetchBTC() {
+        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+        if (!res.ok) throw new Error('btc ticker error');
+        const data = await res.json();
+        const newPrice = parseFloat(data.price);
+        const lastBTC = state.btcPrice;
+        state.btcPrice = newPrice;
+        state.btcVelocity = (lastBTC && lastBTC > 0) ? (newPrice - lastBTC) / lastBTC : 0;
+        if (Math.abs(state.btcVelocity) > 0.003) {
+            state.crossShock = true;
+            console.log('BTC SHOCK DETECTED - HALTING');
+        } else {
+            state.crossShock = false;
+        }
     }
 
     function trimHistory() {
@@ -776,6 +889,54 @@
         const clipped = clamp(50 + rawOmega, 0, 100);
         state.omega = (clipped * 0.3) + (state.omega * 0.7);
         state.lastPrice = state.price;
+
+        if (state.regime === previousRegime) {
+            state.regimeDuration += 1;
+        } else {
+            state.regimeDuration = 1;
+        }
+        state.persistenceProb = 1 - (1 / (state.regimeDuration + 1));
+        previousRegime = state.regime;
+    }
+
+    function getEntropyValue() {
+        if (state.entropyHistory.length === 0) return 0;
+        const sorted = [...state.entropyHistory].sort((a, b) => a - b);
+        const idx = (p) => Math.floor((sorted.length - 1) * p);
+
+        const q0 = sorted[0];
+        const q1 = sorted[idx(0.2)] ?? sorted[0];
+        const q2 = sorted[idx(0.4)] ?? sorted[sorted.length - 1];
+        const q3 = sorted[idx(0.6)] ?? sorted[sorted.length - 1];
+        const q4 = sorted[idx(0.8)] ?? sorted[sorted.length - 1];
+        const q5 = sorted[sorted.length - 1];
+
+        const bins = [0, 0, 0, 0, 0];
+        for (const v of state.entropyHistory) {
+            if (v <= q1 || v <= q0) bins[0] += 1;
+            else if (v <= q2) bins[1] += 1;
+            else if (v <= q3) bins[2] += 1;
+            else if (v <= q4) bins[3] += 1;
+            else if (v <= q5) bins[4] += 1;
+            else bins[4] += 1;
+        }
+
+        const total = state.entropyHistory.length;
+        let H = 0;
+        for (const count of bins) {
+            if (count === 0) continue;
+            const p = count / total;
+            H -= p * Math.log2(p);
+        }
+        return H / Math.log2(5);
+    }
+
+    function applyExecutionGates() {
+        state.entropyHistory.push(state.flowDeltaNorm);
+        if (state.entropyHistory.length > 20) state.entropyHistory.shift();
+
+        const entropy = getEntropyValue();
+        state.entropyBlocked = entropy > 0.8;
     }
 
     function executeBuy() {
@@ -822,6 +983,10 @@
 
     function runTradingLogic() {
         if (!state.active) return;
+        if (state.crossShock || state.entropyBlocked || state.persistenceProb <= 0.60) {
+            state.omegaConfirm = 0;
+            return;
+        }
 
         const avgVol = state.volHistory.length
             ? state.volHistory.reduce((sum, v) => sum + v, 0) / state.volHistory.length
@@ -862,10 +1027,11 @@
 
     async function dataLoop() {
         try {
-            await fetchTicker();
-            await fetchOrderBook();
             await fetchTrades();
+            await fetchOrderBook();
+            await fetchBTC();
             computeOmega();
+            applyExecutionGates();
             runTradingLogic();
             updateOmegaUI();
             updatePortfolioUI();
@@ -907,11 +1073,6 @@
     }
 
     init();
-</script>
-</body>
-</html>
-
-    initSystem();
 </script>
 </body>
 </html>
