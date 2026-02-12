@@ -195,6 +195,37 @@
             letter-spacing: 0.5px;
         }
 
+        .liq-bar-wrap {
+            margin-top: 8px;
+            width: 100%;
+            height: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.45);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .liq-divider {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 1px;
+            background: rgba(255,255,255,0.3);
+            z-index: 3;
+        }
+
+        .liq-bids,
+        .liq-asks {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            transition: all 0.6s cubic-bezier(.22,.61,.36,1);
+        }
+
+        .liq-bids { left: 0; background: linear-gradient(90deg, rgba(204,255,0,0.3), rgba(204,255,0,0.8)); width: 50%; }
+        .liq-asks { right: 0; background: linear-gradient(90deg, rgba(255,42,109,0.8), rgba(255,42,109,0.3)); width: 50%; }
+
         .singularity-container {
             position: relative;
             border: 1px solid var(--glass-border);
@@ -337,12 +368,17 @@
                 <h3>ROI ALPHA %</h3>
                 <div class="val" id="roiVal">0.00%</div>
                 <div class="status" id="roiText">BASELINE</div>
-                <div class="alpha-mini" id="alphaMeta">BOT: $0.00 | HOLD: $0.00 | EDGE: $0.00</div>
+                <div class="alpha-mini" id="alphaMeta">EDGE: $0.00 | MAX DD: 0.00%</div>
             </div>
             <div class="metric-card">
                 <h3>LIQUIDITY IMBALANCE</h3>
                 <div class="val" id="liqVal">0.00%</div>
                 <div class="status" id="liqText">BALANCED</div>
+                <div class="liq-bar-wrap">
+                    <div class="liq-bids" id="liqBids"></div>
+                    <div class="liq-asks" id="liqAsks"></div>
+                    <div class="liq-divider"></div>
+                </div>
             </div>
         </div>
 
@@ -368,6 +404,7 @@
 
 <script>
     const FEE_RATE = 0.001;
+    const SLIPPAGE = 0.0002;
 
     const state = {
         price: 0,
@@ -378,6 +415,7 @@
         active: false,
         omega: 50,
         flowDelta: 0,
+        flowDeltaNorm: 0,
         liqImbalance: 0,
         lastPrice: 0,
         priceVelocity: 0,
@@ -386,9 +424,16 @@
         omegaHistory: [],
         flowHistory: [],
         liqHistory: [],
+        volHistory: [],
+        omegaConfirm: 0,
         lastTradeTime: 0,
         holdValue: 0,
-        regime: 'RANGE'
+        maxPortfolioValue: 0,
+        maxDrawdown: 0,
+        regime: 'RANGE',
+        bidsRatio: 0.5,
+        asksRatio: 0.5,
+        loopCount: 0
     };
 
     const els = {
@@ -406,6 +451,8 @@
         alphaMeta: document.getElementById('alphaMeta'),
         liqVal: document.getElementById('liqVal'),
         liqText: document.getElementById('liqText'),
+        liqBids: document.getElementById('liqBids'),
+        liqAsks: document.getElementById('liqAsks'),
         wealthTotal: document.getElementById('wealthTotal'),
         xrpInput: document.getElementById('xrpInput'),
         usdtInput: document.getElementById('usdtInput'),
@@ -443,11 +490,17 @@
         ctx.fillRect(0, 0, width, height);
 
         const pulse = state.omega >= 50 ? { r: 204, g: 255, b: 0 } : { r: 255, g: 42, b: 109 };
-        const intensity = (state.omega > 80 || state.omega < 20) ? 1.45 : 1;
+        const extreme = state.omega > 80 || state.omega < 20;
+        const intensity = extreme ? 1.5 : 1;
 
         particles.forEach((p, i) => {
             p.x += p.vx * intensity;
             p.y += p.vy * intensity;
+
+            if (extreme) {
+                p.x += (Math.random() - 0.5) * 2;
+                p.y += (Math.random() - 0.5) * 2;
+            }
 
             if (p.x < 0 || p.x > width) p.vx *= -1;
             if (p.y < 0 || p.y > height) p.vy *= -1;
@@ -489,7 +542,7 @@
         div.className = `log-line ${type}`;
         div.innerText = msg;
         els.term.prepend(div);
-        if (els.term.children.length > 16) {
+        if (els.term.children.length > 18) {
             els.term.lastChild.remove();
         }
     }
@@ -545,13 +598,27 @@
         return usdtLeg + xrpLeg;
     }
 
+    function updateDrawdown(portfolioValue) {
+        if (portfolioValue > state.maxPortfolioValue) {
+            state.maxPortfolioValue = portfolioValue;
+        }
+
+        if (state.maxPortfolioValue > 0 && portfolioValue < state.maxPortfolioValue) {
+            const drawdown = (portfolioValue - state.maxPortfolioValue) / state.maxPortfolioValue;
+            state.maxDrawdown = Math.min(state.maxDrawdown, drawdown);
+        }
+    }
+
     function updatePortfolioUI() {
         const value = getPortfolioValueUSD();
         if (state.initialValueUSD === null && state.price > 0) {
             state.initialValueUSD = value;
+            state.maxPortfolioValue = value;
         }
 
         state.holdValue = 1000 * state.price;
+        updateDrawdown(value);
+
         const roi = state.initialValueUSD ? ((value - state.initialValueUSD) / state.initialValueUSD) * 100 : 0;
         const alphaEdge = value - state.holdValue;
 
@@ -559,7 +626,7 @@
         els.wealthTotal.textContent = formatUSD(value);
 
         els.roiVal.textContent = `${roi.toFixed(2)}%`;
-        els.alphaMeta.textContent = `BOT: ${formatUSD(value)} | HOLD: ${formatUSD(state.holdValue)} | EDGE: ${formatUSD(alphaEdge)}`;
+        els.alphaMeta.textContent = `EDGE: ${formatUSD(alphaEdge)} | MAX DD: ${(state.maxDrawdown * 100).toFixed(2)}%`;
 
         if (alphaEdge > 0) {
             els.roiVal.style.color = 'var(--acid)';
@@ -592,6 +659,13 @@
         if (state.regime === 'CHAOS') els.regimeTag.classList.add('chaos');
     }
 
+    function updateLiquidityBar() {
+        const bidsWidth = clamp(state.bidsRatio * 100, 0, 100);
+        const asksWidth = clamp(state.asksRatio * 100, 0, 100);
+        els.liqBids.style.width = `${bidsWidth}%`;
+        els.liqAsks.style.width = `${asksWidth}%`;
+    }
+
     function updateOmegaUI() {
         els.omegaVal.textContent = state.omega.toFixed(2);
 
@@ -617,6 +691,7 @@
         }
 
         updateRegimeUI();
+        updateLiquidityBar();
     }
 
     async function fetchTicker() {
@@ -641,7 +716,11 @@
         const totalAsks = asksTop50.reduce((sum, level) => sum + parseFloat(level[1]), 0);
         const total = totalBids + totalAsks;
 
-        state.liqImbalance = total === 0 ? 0 : (totalBids - totalAsks) / total;
+        const newImbalance = total === 0 ? 0 : (totalBids - totalAsks) / total;
+        state.liqImbalance = (state.liqImbalance * 0.6) + (newImbalance * 0.4);
+
+        state.bidsRatio = total === 0 ? 0.5 : totalBids / total;
+        state.asksRatio = total === 0 ? 0.5 : totalAsks / total;
 
         if (Math.abs(state.liqImbalance) > 0.4) {
             log('LIQUIDITY WALL DETECTED', 'warn');
@@ -660,12 +739,14 @@
         }
 
         state.flowDelta = weightedDelta;
+        state.flowDeltaNorm = state.volume > 0 ? weightedDelta / state.volume : 0;
     }
 
     function trimHistory() {
         if (state.omegaHistory.length > 20) state.omegaHistory.shift();
         if (state.flowHistory.length > 20) state.flowHistory.shift();
         if (state.liqHistory.length > 20) state.liqHistory.shift();
+        if (state.volHistory.length > 10) state.volHistory.shift();
     }
 
     function computeOmega() {
@@ -673,8 +754,9 @@
         state.priceVelocity = priceVelocity;
 
         state.omegaHistory.push(state.omega);
-        state.flowHistory.push(state.flowDelta);
+        state.flowHistory.push(state.flowDeltaNorm);
         state.liqHistory.push(state.liqImbalance);
+        state.volHistory.push(Math.abs(state.priceVelocity));
         trimHistory();
 
         const firstOmega = state.omegaHistory[0] ?? state.omega;
@@ -682,16 +764,12 @@
         const omegaSlope = lastOmega - firstOmega;
 
         const slopeAbs = Math.abs(omegaSlope);
-        if (slopeAbs < 5) {
-            state.regime = 'RANGE';
-        } else if (slopeAbs <= 15) {
-            state.regime = 'TREND';
-        } else {
-            state.regime = 'CHAOS';
-        }
+        if (slopeAbs < 5) state.regime = 'RANGE';
+        else if (slopeAbs <= 15) state.regime = 'TREND';
+        else state.regime = 'CHAOS';
 
         const rawOmega =
-            (state.flowDelta * state.liqImbalance)
+            (state.flowDeltaNorm * state.liqImbalance)
             - (priceVelocity * 10)
             + (omegaSlope * 0.5);
 
@@ -703,42 +781,55 @@
     function executeBuy() {
         if (state.balanceUSDT <= 0 || state.price <= 0) return;
 
-        const grossXrp = state.balanceUSDT / state.price;
-        const feeXrp = grossXrp * FEE_RATE;
-        const netXrp = Math.max(0, grossXrp - feeXrp);
+        const fraction = state.omega > 90 ? 1 : 0.5;
+        const spendUSDT = Math.max(0, state.balanceUSDT * fraction);
+        const fillPrice = state.price * (1 + SLIPPAGE);
 
-        state.balanceUSDT = 0;
-        state.balanceXRP = Math.max(0, state.balanceXRP + netXrp);
-        state.position = 'XRP';
+        const grossXRP = spendUSDT / fillPrice;
+        const feeXRP = grossXRP * FEE_RATE;
+        const netXRP = Math.max(0, grossXRP - feeXRP);
+
+        state.balanceUSDT = Math.max(0, state.balanceUSDT - spendUSDT);
+        state.balanceXRP = Math.max(0, state.balanceXRP + netXRP);
+        state.position = state.balanceUSDT > 0.0000001 ? 'MIXED' : 'XRP';
         state.lastTradeTime = Date.now();
 
         flashExecution('buy');
         showTradeMarker('buy');
-        log(`BUY @ ${state.price.toFixed(4)} | Fee ${feeXrp.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'ai');
+        log(`BUY @ ${fillPrice.toFixed(4)} | Fee ${feeXRP.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'ai');
     }
 
     function executeSell() {
         if (state.balanceXRP <= 0 || state.price <= 0) return;
 
-        const grossUsdt = state.balanceXRP * state.price;
-        const feeUsdt = grossUsdt * FEE_RATE;
-        const netUsdt = Math.max(0, grossUsdt - feeUsdt);
+        const fraction = state.omega < 10 ? 1 : 0.5;
+        const sellXRP = Math.max(0, state.balanceXRP * fraction);
+        const fillPrice = state.price * (1 - SLIPPAGE);
 
-        state.balanceXRP = 0;
-        state.balanceUSDT = Math.max(0, state.balanceUSDT + netUsdt);
-        state.position = 'USDT';
+        const grossUSDT = sellXRP * fillPrice;
+        const feeUSDT = grossUSDT * FEE_RATE;
+        const netUSDT = Math.max(0, grossUSDT - feeUSDT);
+
+        state.balanceXRP = Math.max(0, state.balanceXRP - sellXRP);
+        state.balanceUSDT = Math.max(0, state.balanceUSDT + netUSDT);
+        state.position = state.balanceXRP > 0.0000001 ? 'MIXED' : 'USDT';
         state.lastTradeTime = Date.now();
 
         flashExecution('sell');
         showTradeMarker('sell');
-        log(`SELL @ ${state.price.toFixed(4)} | Fee ${feeUsdt.toFixed(4)} USDT | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'warn');
+        log(`SELL @ ${fillPrice.toFixed(4)} | Fee ${feeUSDT.toFixed(4)} USDT | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'warn');
     }
 
     function runTradingLogic() {
         if (!state.active) return;
 
-        if (Math.abs(state.priceVelocity) > 0.008) {
+        const avgVol = state.volHistory.length
+            ? state.volHistory.reduce((sum, v) => sum + v, 0) / state.volHistory.length
+            : 0;
+
+        if (avgVol > 0.008) {
             log('VOLATILITY SPIKE — EXECUTION PAUSED', 'warn');
+            state.omegaConfirm = 0;
             return;
         }
 
@@ -746,13 +837,27 @@
             return;
         }
 
-        if (state.omega > 85 && state.position === 'USDT') {
-            executeBuy();
+        if (state.omega > 85 || state.omega < 15) {
+            state.omegaConfirm += 1;
+        } else {
+            state.omegaConfirm = 0;
+            return;
         }
 
-        if (state.omega < 15 && state.position === 'XRP') {
+        if (state.omegaConfirm < 2) return;
+
+        if (state.omega > 85 && state.balanceUSDT > 0) {
+            executeBuy();
+            state.omegaConfirm = 0;
+        } else if (state.omega < 15 && state.balanceXRP > 0) {
             executeSell();
+            state.omegaConfirm = 0;
         }
+    }
+
+    function heartbeat() {
+        const alphaEdge = getPortfolioValueUSD() - state.holdValue;
+        log(`SYSTEM HEARTBEAT: Alpha Edge ${formatUSD(alphaEdge)} | Regime: ${state.regime}`, 'normal');
     }
 
     async function dataLoop() {
@@ -764,6 +869,9 @@
             runTradingLogic();
             updateOmegaUI();
             updatePortfolioUI();
+
+            state.loopCount += 1;
+            if (state.loopCount % 5 === 0) heartbeat();
         } catch (e) {
             log(`DATA LOOP WARNING: ${e.message}`, 'warn');
         }
@@ -790,6 +898,7 @@
         bindControls();
         updateSessionTag();
         updateRegimeUI();
+        updateLiquidityBar();
         log('SIMULATION ONLY // NO REAL TRADING', 'normal');
         log('PUBLIC BINANCE DATA LINK ONLINE', 'normal');
 
