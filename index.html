@@ -540,8 +540,8 @@
         </div>
 
         <div class="control-group">
-            <label><span>Balance USDT</span> <span id="usdtBalanceLabel">0.0000 USDT</span></label>
-            <input type="text" class="cyber-input" id="usdtInput" value="0.0000" disabled>
+            <label><span>Balance RLUSD</span> <span id="rlusdBalanceLabel">0.0000 RLUSD</span></label>
+            <input type="text" class="cyber-input" id="rlusdInput" value="0.0000" disabled>
         </div>
 
         <div class="action-grid">
@@ -638,7 +638,7 @@
             <canvas id="nexus"></canvas>
             <div class="trade-marker" id="tradeMarker">+ BUY</div>
             <div class="center-data">
-                <div class="sub-price">XRPUSDT MARKET</div>
+                <div class="sub-price">XRP/RLUSD MARKET</div>
                 <div class="big-price" id="mainPrice">$0.0000</div>
                 <div class="connect-status" id="connectStatus" style="color:#666">STANDBY // NO EXECUTION</div>
             </div>
@@ -678,7 +678,7 @@
     const state = {
         price: 0,
         balanceXRP: 1000,
-        balanceUSDT: 0,
+        balanceRLUSD: 0,
         position: "XRP",
         initialValueUSD: null,
         active: false,
@@ -743,9 +743,9 @@
         liqAsks: document.getElementById('liqAsks'),
         wealthTotal: document.getElementById('wealthTotal'),
         xrpInput: document.getElementById('xrpInput'),
-        usdtInput: document.getElementById('usdtInput'),
+        rlusdInput: document.getElementById('rlusdInput'),
         xrpBalanceLabel: document.getElementById('xrpBalanceLabel'),
-        usdtBalanceLabel: document.getElementById('usdtBalanceLabel'),
+        rlusdBalanceLabel: document.getElementById('rlusdBalanceLabel'),
         regimeTag: document.getElementById('regimeTag'),
         singularityBox: document.getElementById('singularityBox'),
         tradeMarker: document.getElementById('tradeMarker'),
@@ -865,13 +865,13 @@
     }
 
 
-    const STORAGE_KEY = 'xrp-omega-state-v2';
+    const STORAGE_KEY = 'xrp-omega-state-v3';
 
     function saveState() {
         const data = {
             active: state.active,
             balanceXRP: state.balanceXRP,
-            balanceUSDT: state.balanceUSDT,
+            balanceRLUSD: state.balanceRLUSD,
             lastTradeTime: state.lastTradeTime,
             protocolStartedAt: state.protocolStartedAt
         };
@@ -885,7 +885,7 @@
             const data = JSON.parse(raw);
             state.active = Boolean(data.active);
             state.balanceXRP = Number.isFinite(data.balanceXRP) ? data.balanceXRP : state.balanceXRP;
-            state.balanceUSDT = Number.isFinite(data.balanceUSDT) ? data.balanceUSDT : state.balanceUSDT;
+            state.balanceRLUSD = Number.isFinite(data.balanceRLUSD) ? data.balanceRLUSD : state.balanceRLUSD;
             state.lastTradeTime = Number.isFinite(data.lastTradeTime) ? data.lastTradeTime : 0;
             state.protocolStartedAt = Number.isFinite(data.protocolStartedAt) ? data.protocolStartedAt : null;
         } catch (error) {
@@ -951,7 +951,7 @@
 
     function getPortfolioValueUSD() {
         const xrpLeg = Math.max(0, state.balanceXRP) * Math.max(0, state.price);
-        const usdtLeg = Math.max(0, state.balanceUSDT);
+        const usdtLeg = Math.max(0, state.balanceRLUSD);
         return usdtLeg + xrpLeg;
     }
 
@@ -1000,12 +1000,12 @@
         }
 
         state.balanceXRP = Math.max(0, state.balanceXRP);
-        state.balanceUSDT = Math.max(0, state.balanceUSDT);
+        state.balanceRLUSD = Math.max(0, state.balanceRLUSD);
 
         els.xrpInput.value = state.balanceXRP.toFixed(4);
-        els.usdtInput.value = state.balanceUSDT.toFixed(4);
+        els.rlusdInput.value = state.balanceRLUSD.toFixed(4);
         els.xrpBalanceLabel.textContent = `${state.balanceXRP.toFixed(4)} XRP`;
-        els.usdtBalanceLabel.textContent = `${state.balanceUSDT.toFixed(4)} USDT`;
+        els.rlusdBalanceLabel.textContent = `${state.balanceRLUSD.toFixed(4)} RLUSD`;
     }
 
     function updateRegimeUI() {
@@ -1356,19 +1356,19 @@
     }
 
     function executeBuy() {
-        if (state.balanceUSDT <= 0 || state.price <= 0) return;
+        if (state.balanceRLUSD <= 0 || state.price <= 0) return;
 
         const fraction = state.omega > 90 ? 1 : 0.5;
-        const spendUSDT = Math.max(0, state.balanceUSDT * fraction);
+        const spendRLUSD = Math.max(0, state.balanceRLUSD * fraction);
         const fillPrice = state.price * (1 + SLIPPAGE);
 
-        const grossXRP = spendUSDT / fillPrice;
+        const grossXRP = spendRLUSD / fillPrice;
         const feeXRP = grossXRP * FEE_RATE;
         const netXRP = Math.max(0, grossXRP - feeXRP);
 
-        state.balanceUSDT = Math.max(0, state.balanceUSDT - spendUSDT);
+        state.balanceRLUSD = Math.max(0, state.balanceRLUSD - spendRLUSD);
         state.balanceXRP = Math.max(0, state.balanceXRP + netXRP);
-        state.position = state.balanceUSDT > 0.0000001 ? 'MIXED' : 'XRP';
+        state.position = state.balanceRLUSD > 0.0000001 ? 'MIXED' : 'XRP';
         state.lastTradeTime = Date.now();
 
         state.cycleTradeType = 'buy';
@@ -1376,7 +1376,7 @@
         showTradeMarker('buy');
         state.lastAction = `BUY ${netXRP.toFixed(2)} XRP`;
         els.lastAction.textContent = state.lastAction;
-        log(`BUY @ ${fillPrice.toFixed(4)} | Fee ${feeXRP.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'ai');
+        log(`BUY @ ${fillPrice.toFixed(4)} | Fee ${feeXRP.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | RLUSD ${state.balanceRLUSD.toFixed(4)}`, 'ai');
         saveState();
     }
 
@@ -1387,21 +1387,21 @@
         const sellXRP = Math.max(0, state.balanceXRP * fraction);
         const fillPrice = state.price * (1 - SLIPPAGE);
 
-        const grossUSDT = sellXRP * fillPrice;
-        const feeUSDT = grossUSDT * FEE_RATE;
-        const netUSDT = Math.max(0, grossUSDT - feeUSDT);
+        const grossRLUSD = sellXRP * fillPrice;
+        const feeRLUSD = grossRLUSD * FEE_RATE;
+        const netRLUSD = Math.max(0, grossRLUSD - feeRLUSD);
 
         state.balanceXRP = Math.max(0, state.balanceXRP - sellXRP);
-        state.balanceUSDT = Math.max(0, state.balanceUSDT + netUSDT);
-        state.position = state.balanceXRP > 0.0000001 ? 'MIXED' : 'USDT';
+        state.balanceRLUSD = Math.max(0, state.balanceRLUSD + netRLUSD);
+        state.position = state.balanceXRP > 0.0000001 ? 'MIXED' : 'RLUSD';
         state.lastTradeTime = Date.now();
 
         state.cycleTradeType = 'sell';
         flashExecution('sell');
         showTradeMarker('sell');
-        state.lastAction = `SELL ${sellXRP.toFixed(2)} XRP`;
+        state.lastAction = `SELL ${sellXRP.toFixed(2)} XRP → RLUSD`;
         els.lastAction.textContent = state.lastAction;
-        log(`SELL @ ${fillPrice.toFixed(4)} | Fee ${feeUSDT.toFixed(4)} USDT | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'warn');
+        log(`SELL @ ${fillPrice.toFixed(4)} | Fee ${feeRLUSD.toFixed(4)} RLUSD | XRP ${state.balanceXRP.toFixed(4)} | RLUSD ${state.balanceRLUSD.toFixed(4)}`, 'warn');
         saveState();
     }
 
@@ -1476,12 +1476,12 @@
         if (state.omegaConfirm < 2) return;
 
         // ── EJECUCIÓN ─────────────────────────────────────────────────────────
-        if (state.omega > adaptiveThresholds.omegaHigh && state.balanceUSDT > 0) {
-            setDecision('ACTION', 'Ejecución BUY', `Omega ${state.omega.toFixed(2)} > ${adaptiveThresholds.omegaHigh.toFixed(0)} + USDT disponible => conversión a XRP.`);
+        if (state.omega > adaptiveThresholds.omegaHigh && state.balanceRLUSD > 0) {
+            setDecision('ACTION', 'Ejecución BUY', `Omega ${state.omega.toFixed(2)} > ${adaptiveThresholds.omegaHigh.toFixed(0)} + RLUSD disponible => conversión a XRP.`);
             executeBuy();
             state.omegaConfirm = 0;
         } else if (state.omega < adaptiveThresholds.omegaLow && state.balanceXRP > 0) {
-            setDecision('ACTION', 'Ejecución SELL', `Omega ${state.omega.toFixed(2)} < ${adaptiveThresholds.omegaLow.toFixed(0)} + XRP disponible => cobertura parcial en USDT.`);
+            setDecision('ACTION', 'Ejecución SELL', `Omega ${state.omega.toFixed(2)} < ${adaptiveThresholds.omegaLow.toFixed(0)} + XRP disponible => cobertura parcial en RLUSD.`);
             executeSell();
             state.omegaConfirm = 0;
         } else {
