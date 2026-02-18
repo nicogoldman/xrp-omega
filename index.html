@@ -44,24 +44,26 @@
         }
 
         .layout {
-            max-width: 1800px; margin: 0 auto; padding: 20px;
-            display: grid; grid-template-columns: 350px 1fr; gap: 20px;
-            min-height: 100vh;
-            height: auto;
+            max-width: 1800px; margin: 0 auto;
+            padding: 12px;
+            display: flex; flex-direction: column;
+            gap: 14px;
+            min-height: 100vh; height: auto;
             position: relative; z-index: 10;
-            padding-bottom: 50px;
+            padding-bottom: 32px;
         }
 
         .cyber-panel {
             background: var(--glass);
             border: 1px solid var(--glass-border);
-            padding: 25px;
+            padding: 18px;
             border-radius: 4px;
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            display: flex; flex-direction: column; gap: 20px;
+            display: flex; flex-direction: column; gap: 16px;
             box-shadow: 0 0 40px rgba(0,0,0,0.6);
             height: fit-content;
+            order: 2;
         }
 
         .header { text-align: center; margin-bottom: 10px; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; position: relative; }
@@ -70,7 +72,7 @@
             width: 60px; height: 2px; background: var(--cyan); box-shadow: 0 0 15px var(--cyan);
         }
 
-        .logo { font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 2rem; letter-spacing: -2px; color: white; text-shadow: 0 0 20px var(--cyan); }
+        .logo { font-family: 'Syncopate', sans-serif; font-weight: 700; font-size: 1.55rem; letter-spacing: -1px; color: white; text-shadow: 0 0 20px var(--cyan); }
         .logo span { color: var(--acid); font-size: 0.9rem; letter-spacing: 6px; display: block; margin-top: 5px; opacity: 0.9; }
 
         .header-tag {
@@ -129,13 +131,16 @@
             background: rgba(0, 243, 255, 0.08);
             color: var(--cyan);
             border: 1px solid var(--glass-border);
-            padding: 11px 14px;
+            padding: 14px 14px;
+            min-height: 44px;
             font-family: 'Space Mono', monospace;
             font-size: 0.82rem;
             letter-spacing: 1px;
             cursor: pointer;
             transition: all 0.2s ease;
             text-transform: uppercase;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .action-btn:hover {
@@ -184,8 +189,8 @@
         }
 
         .terminal {
-            height: 220px;
-            max-height: 220px;
+            height: 150px;
+            max-height: 150px;
             background: rgba(5, 5, 5, 0.95);
             border: 1px solid #222;
             padding: 15px;
@@ -219,7 +224,7 @@
 
         /* .main-deck rows definidos en bloque anterior (auto auto 1fr auto) */
 
-        .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .metric-card {
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--glass-border);
@@ -228,8 +233,8 @@
             transition: background 0.3s;
         }
         .metric-card:hover { background: rgba(255,255,255,0.05); }
-        .metric-card h3 { margin: 0; font-size: 0.65rem; color: #666; letter-spacing: 2px; text-transform: uppercase; }
-        .metric-card .val { font-size: 1.4rem; font-weight: 700; margin-top: 10px; color: white; font-family: 'Syncopate'; }
+        .metric-card h3 { margin: 0; font-size: 0.6rem; color: #666; letter-spacing: 1.5px; text-transform: uppercase; }
+        .metric-card .val { font-size: 1.1rem; font-weight: 700; margin-top: 8px; color: white; font-family: 'Syncopate'; }
         .metric-card .status { font-size: 0.6rem; color: var(--cyan); margin-top: 5px; opacity: 0.8; }
         .decision-main {
             margin-top: 10px;
@@ -340,7 +345,7 @@
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
             border-radius: 2px;
-            min-height: 400px;
+            min-height: 240px;
             transition: box-shadow 0.3s ease, border-color 0.3s ease;
         }
 
@@ -381,8 +386,8 @@
 
         .center-data { z-index: 2; text-align: center; pointer-events: none; mix-blend-mode: screen; }
         .big-price {
-            font-size: 5rem; font-family: 'Syncopate'; font-weight: 700; color: white;
-            letter-spacing: -4px; line-height: 1;
+            font-size: 2.6rem; font-family: 'Syncopate'; font-weight: 700; color: white;
+            letter-spacing: -2px; line-height: 1;
             text-shadow: 0 0 40px rgba(0, 243, 255, 0.3);
         }
         .sub-price { font-size: 1rem; color: var(--acid); letter-spacing: 8px; text-transform: uppercase; margin-bottom: 10px; }
@@ -395,12 +400,12 @@
         .wealth-bar {
             background: linear-gradient(90deg, rgba(10,20,15,0.9) 0%, rgba(5,10,5,1) 100%);
             border: 1px solid var(--acid);
-            padding: 25px;
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center;
             box-shadow: 0 0 20px rgba(204, 255, 0, 0.1);
             position: relative; overflow: hidden;
-            flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
         }
 
         .wealth-bar::before {
@@ -409,7 +414,7 @@
             animation: shine 6s infinite;
         }
 
-        .wealth-total { font-size: 2.5rem; color: var(--acid); font-weight: 700; text-shadow: 0 0 15px rgba(204, 255, 0, 0.4); font-family: 'Syncopate'; word-break: break-all; }
+        .wealth-total { font-size: 1.7rem; color: var(--acid); font-weight: 700; text-shadow: 0 0 15px rgba(204, 255, 0, 0.4); font-family: 'Syncopate'; word-break: break-all; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
@@ -422,9 +427,14 @@
             background: rgba(0, 0, 0, 0.55);
             border: 1px solid rgba(0, 243, 255, 0.12);
             border-left: 3px solid rgba(0, 243, 255, 0.4);
-            padding: 8px 16px;
-            flex-wrap: wrap;
+            padding: 8px 12px;
+            /* mobile: scroll horizontal para no romper el layout */
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
+        .window-metrics-bar::-webkit-scrollbar { display: none; }
 
         .wm-label-title {
             font-size: 0.58rem;
@@ -468,22 +478,50 @@
             border-right: none;
         }
 
-        .main-deck { display: grid; grid-template-rows: auto auto 1fr auto; gap: 20px; }
+        /* mobile-first: base = flex column, order: main primero, panel debajo */
+        .main-deck { display: flex; flex-direction: column; gap: 14px; order: 1; }
 
-        @media (max-width: 1100px) {
-            .layout { grid-template-columns: 1fr; height: auto; display: flex; flex-direction: column; }
-            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
-            .singularity-container { height: 350px; min-height: 350px; }
-            .big-price { font-size: 3.5rem; }
-            .cyber-panel { order: 2; }
-            .main-deck { order: 1; }
+        /* ── 480 px ──────────────────────────────────────────────────────── */
+        @media (min-width: 480px) {
+            .layout { padding: 14px; gap: 16px; }
+            .big-price { font-size: 3.2rem; letter-spacing: -3px; }
+            .singularity-container { min-height: 290px; }
         }
 
-        @media (max-width: 600px) {
-            .big-price { font-size: 2.8rem; }
-            .wealth-total { font-size: 1.8rem; }
-            .wealth-bar { flex-direction: column; text-align: center; }
-            .metric-card .val { font-size: 1.1rem; }
+        /* ── 640 px (small tablet) ───────────────────────────────────────── */
+        @media (min-width: 640px) {
+            .layout { padding: 16px; gap: 18px; }
+            .metrics-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+            .metric-card .val { font-size: 1.3rem; }
+            .metric-card h3 { font-size: 0.63rem; letter-spacing: 2px; }
+            .big-price { font-size: 3.8rem; letter-spacing: -3px; }
+            .wealth-total { font-size: 2rem; }
+            .wealth-bar { flex-direction: row; text-align: left; padding: 20px; }
+            .singularity-container { min-height: 320px; }
+            .terminal { height: 180px; max-height: 180px; }
+            .window-metrics-bar { flex-wrap: wrap; overflow-x: visible; }
+        }
+
+        /* ── 1100 px (desktop) ───────────────────────────────────────────── */
+        @media (min-width: 1100px) {
+            .layout {
+                display: grid;
+                grid-template-columns: 350px 1fr;
+                gap: 20px;
+                padding: 20px;
+                padding-bottom: 50px;
+            }
+            .cyber-panel { order: 0; padding: 25px; gap: 20px; }
+            .main-deck { display: grid; grid-template-rows: auto auto 1fr auto; gap: 20px; order: 0; }
+            .metrics-grid { grid-template-columns: repeat(5, 1fr); gap: 15px; }
+            .metric-card .val { font-size: 1.4rem; }
+            .metric-card h3 { font-size: 0.65rem; letter-spacing: 2px; }
+            .big-price { font-size: 5rem; letter-spacing: -4px; }
+            .wealth-total { font-size: 2.5rem; }
+            .wealth-bar { padding: 25px; }
+            .singularity-container { min-height: 400px; }
+            .terminal { height: 220px; max-height: 220px; }
+            .logo { font-size: 2rem; letter-spacing: -2px; }
         }
     </style>
 </head>
@@ -502,8 +540,8 @@
         </div>
 
         <div class="control-group">
-            <label><span>Balance USDT</span> <span id="usdtBalanceLabel">0.0000 USDT</span></label>
-            <input type="text" class="cyber-input" id="usdtInput" value="0.0000" disabled>
+            <label><span>Balance RLUSD</span> <span id="rlusdBalanceLabel">0.0000 RLUSD</span></label>
+            <input type="text" class="cyber-input" id="rlusdInput" value="0.0000" disabled>
         </div>
 
         <div class="action-grid">
@@ -600,7 +638,7 @@
             <canvas id="nexus"></canvas>
             <div class="trade-marker" id="tradeMarker">+ BUY</div>
             <div class="center-data">
-                <div class="sub-price">XRPUSDT MARKET</div>
+                <div class="sub-price">XRP/RLUSD MARKET</div>
                 <div class="big-price" id="mainPrice">$0.0000</div>
                 <div class="connect-status" id="connectStatus" style="color:#666">STANDBY // NO EXECUTION</div>
             </div>
@@ -640,7 +678,7 @@
     const state = {
         price: 0,
         balanceXRP: 1000,
-        balanceUSDT: 0,
+        balanceRLUSD: 0,
         position: "XRP",
         initialValueUSD: null,
         active: false,
@@ -705,9 +743,9 @@
         liqAsks: document.getElementById('liqAsks'),
         wealthTotal: document.getElementById('wealthTotal'),
         xrpInput: document.getElementById('xrpInput'),
-        usdtInput: document.getElementById('usdtInput'),
+        rlusdInput: document.getElementById('rlusdInput'),
         xrpBalanceLabel: document.getElementById('xrpBalanceLabel'),
-        usdtBalanceLabel: document.getElementById('usdtBalanceLabel'),
+        rlusdBalanceLabel: document.getElementById('rlusdBalanceLabel'),
         regimeTag: document.getElementById('regimeTag'),
         singularityBox: document.getElementById('singularityBox'),
         tradeMarker: document.getElementById('tradeMarker'),
@@ -827,13 +865,13 @@
     }
 
 
-    const STORAGE_KEY = 'xrp-omega-state-v2';
+    const STORAGE_KEY = 'xrp-omega-state-v3';
 
     function saveState() {
         const data = {
             active: state.active,
             balanceXRP: state.balanceXRP,
-            balanceUSDT: state.balanceUSDT,
+            balanceRLUSD: state.balanceRLUSD,
             lastTradeTime: state.lastTradeTime,
             protocolStartedAt: state.protocolStartedAt
         };
@@ -847,7 +885,7 @@
             const data = JSON.parse(raw);
             state.active = Boolean(data.active);
             state.balanceXRP = Number.isFinite(data.balanceXRP) ? data.balanceXRP : state.balanceXRP;
-            state.balanceUSDT = Number.isFinite(data.balanceUSDT) ? data.balanceUSDT : state.balanceUSDT;
+            state.balanceRLUSD = Number.isFinite(data.balanceRLUSD) ? data.balanceRLUSD : state.balanceRLUSD;
             state.lastTradeTime = Number.isFinite(data.lastTradeTime) ? data.lastTradeTime : 0;
             state.protocolStartedAt = Number.isFinite(data.protocolStartedAt) ? data.protocolStartedAt : null;
         } catch (error) {
@@ -913,7 +951,7 @@
 
     function getPortfolioValueUSD() {
         const xrpLeg = Math.max(0, state.balanceXRP) * Math.max(0, state.price);
-        const usdtLeg = Math.max(0, state.balanceUSDT);
+        const usdtLeg = Math.max(0, state.balanceRLUSD);
         return usdtLeg + xrpLeg;
     }
 
@@ -962,12 +1000,12 @@
         }
 
         state.balanceXRP = Math.max(0, state.balanceXRP);
-        state.balanceUSDT = Math.max(0, state.balanceUSDT);
+        state.balanceRLUSD = Math.max(0, state.balanceRLUSD);
 
         els.xrpInput.value = state.balanceXRP.toFixed(4);
-        els.usdtInput.value = state.balanceUSDT.toFixed(4);
+        els.rlusdInput.value = state.balanceRLUSD.toFixed(4);
         els.xrpBalanceLabel.textContent = `${state.balanceXRP.toFixed(4)} XRP`;
-        els.usdtBalanceLabel.textContent = `${state.balanceUSDT.toFixed(4)} USDT`;
+        els.rlusdBalanceLabel.textContent = `${state.balanceRLUSD.toFixed(4)} RLUSD`;
     }
 
     function updateRegimeUI() {
@@ -1318,19 +1356,19 @@
     }
 
     function executeBuy() {
-        if (state.balanceUSDT <= 0 || state.price <= 0) return;
+        if (state.balanceRLUSD <= 0 || state.price <= 0) return;
 
         const fraction = state.omega > 90 ? 1 : 0.5;
-        const spendUSDT = Math.max(0, state.balanceUSDT * fraction);
+        const spendRLUSD = Math.max(0, state.balanceRLUSD * fraction);
         const fillPrice = state.price * (1 + SLIPPAGE);
 
-        const grossXRP = spendUSDT / fillPrice;
+        const grossXRP = spendRLUSD / fillPrice;
         const feeXRP = grossXRP * FEE_RATE;
         const netXRP = Math.max(0, grossXRP - feeXRP);
 
-        state.balanceUSDT = Math.max(0, state.balanceUSDT - spendUSDT);
+        state.balanceRLUSD = Math.max(0, state.balanceRLUSD - spendRLUSD);
         state.balanceXRP = Math.max(0, state.balanceXRP + netXRP);
-        state.position = state.balanceUSDT > 0.0000001 ? 'MIXED' : 'XRP';
+        state.position = state.balanceRLUSD > 0.0000001 ? 'MIXED' : 'XRP';
         state.lastTradeTime = Date.now();
 
         state.cycleTradeType = 'buy';
@@ -1338,7 +1376,7 @@
         showTradeMarker('buy');
         state.lastAction = `BUY ${netXRP.toFixed(2)} XRP`;
         els.lastAction.textContent = state.lastAction;
-        log(`BUY @ ${fillPrice.toFixed(4)} | Fee ${feeXRP.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'ai');
+        log(`BUY @ ${fillPrice.toFixed(4)} | Fee ${feeXRP.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | RLUSD ${state.balanceRLUSD.toFixed(4)}`, 'ai');
         saveState();
     }
 
@@ -1349,21 +1387,21 @@
         const sellXRP = Math.max(0, state.balanceXRP * fraction);
         const fillPrice = state.price * (1 - SLIPPAGE);
 
-        const grossUSDT = sellXRP * fillPrice;
-        const feeUSDT = grossUSDT * FEE_RATE;
-        const netUSDT = Math.max(0, grossUSDT - feeUSDT);
+        const grossRLUSD = sellXRP * fillPrice;
+        const feeRLUSD = grossRLUSD * FEE_RATE;
+        const netRLUSD = Math.max(0, grossRLUSD - feeRLUSD);
 
         state.balanceXRP = Math.max(0, state.balanceXRP - sellXRP);
-        state.balanceUSDT = Math.max(0, state.balanceUSDT + netUSDT);
-        state.position = state.balanceXRP > 0.0000001 ? 'MIXED' : 'USDT';
+        state.balanceRLUSD = Math.max(0, state.balanceRLUSD + netRLUSD);
+        state.position = state.balanceXRP > 0.0000001 ? 'MIXED' : 'RLUSD';
         state.lastTradeTime = Date.now();
 
         state.cycleTradeType = 'sell';
         flashExecution('sell');
         showTradeMarker('sell');
-        state.lastAction = `SELL ${sellXRP.toFixed(2)} XRP`;
+        state.lastAction = `SELL ${sellXRP.toFixed(2)} XRP → RLUSD`;
         els.lastAction.textContent = state.lastAction;
-        log(`SELL @ ${fillPrice.toFixed(4)} | Fee ${feeUSDT.toFixed(4)} USDT | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'warn');
+        log(`SELL @ ${fillPrice.toFixed(4)} | Fee ${feeRLUSD.toFixed(4)} RLUSD | XRP ${state.balanceXRP.toFixed(4)} | RLUSD ${state.balanceRLUSD.toFixed(4)}`, 'warn');
         saveState();
     }
 
@@ -1438,12 +1476,12 @@
         if (state.omegaConfirm < 2) return;
 
         // ── EJECUCIÓN ─────────────────────────────────────────────────────────
-        if (state.omega > adaptiveThresholds.omegaHigh && state.balanceUSDT > 0) {
-            setDecision('ACTION', 'Ejecución BUY', `Omega ${state.omega.toFixed(2)} > ${adaptiveThresholds.omegaHigh.toFixed(0)} + USDT disponible => conversión a XRP.`);
+        if (state.omega > adaptiveThresholds.omegaHigh && state.balanceRLUSD > 0) {
+            setDecision('ACTION', 'Ejecución BUY', `Omega ${state.omega.toFixed(2)} > ${adaptiveThresholds.omegaHigh.toFixed(0)} + RLUSD disponible => conversión a XRP.`);
             executeBuy();
             state.omegaConfirm = 0;
         } else if (state.omega < adaptiveThresholds.omegaLow && state.balanceXRP > 0) {
-            setDecision('ACTION', 'Ejecución SELL', `Omega ${state.omega.toFixed(2)} < ${adaptiveThresholds.omegaLow.toFixed(0)} + XRP disponible => cobertura parcial en USDT.`);
+            setDecision('ACTION', 'Ejecución SELL', `Omega ${state.omega.toFixed(2)} < ${adaptiveThresholds.omegaLow.toFixed(0)} + XRP disponible => cobertura parcial en RLUSD.`);
             executeSell();
             state.omegaConfirm = 0;
         } else {
