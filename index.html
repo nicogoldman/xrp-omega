@@ -149,6 +149,40 @@
             background: rgba(255, 42, 109, 0.08);
         }
 
+        .protocol-monitor {
+            border: 1px solid rgba(255,255,255,0.14);
+            background: rgba(0,0,0,0.45);
+            padding: 12px;
+            font-size: 0.66rem;
+            color: #a9a9a9;
+            letter-spacing: 0.8px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .monitor-title { color: var(--cyan); font-size: 0.62rem; text-transform: uppercase; }
+        .monitor-row { display: flex; justify-content: space-between; gap: 8px; }
+        .monitor-row span:last-child { color: #fff; text-align: right; }
+
+        .loop-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loop-progress-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0%;
+            background: linear-gradient(90deg, rgba(0,243,255,0.45), rgba(204,255,0,0.85));
+            transition: width 0.35s ease;
+        }
+
         .terminal {
             min-height: 170px;
             background: rgba(5, 5, 5, 0.95);
@@ -174,7 +208,7 @@
 
         .main-deck { display: grid; grid-template-rows: auto 1fr auto; gap: 20px; }
 
-        .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; }
         .metric-card {
             background: rgba(255,255,255,0.02);
             border: 1px solid var(--glass-border);
@@ -186,6 +220,18 @@
         .metric-card h3 { margin: 0; font-size: 0.65rem; color: #666; letter-spacing: 2px; text-transform: uppercase; }
         .metric-card .val { font-size: 1.4rem; font-weight: 700; margin-top: 10px; color: white; font-family: 'Syncopate'; }
         .metric-card .status { font-size: 0.6rem; color: var(--cyan); margin-top: 5px; opacity: 0.8; }
+        .decision-main {
+            margin-top: 10px;
+            color: white;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        .decision-reason {
+            margin-top: 6px;
+            color: #8b8b8b;
+            font-size: 0.58rem;
+            line-height: 1.45;
+        }
 
         .regime-tag {
             margin-top: 8px;
@@ -394,8 +440,14 @@
         </div>
 
         <div class="action-grid">
-            <button class="action-btn" id="startBtn">INICIAR PROTOCOLO OMEGA</button>
-            <button class="action-btn stop" id="stopBtn">TERMINAR SESIÓN</button>
+            <button class="action-btn" id="protocolBtn">ACTIVAR PROTOCOLO</button>
+        </div>
+
+        <div class="protocol-monitor">
+            <div class="monitor-title">PROTOCOL MONITOR</div>
+            <div class="monitor-row"><span>Estado de ciclo</span><span id="loopStage">Esperando activación</span></div>
+            <div class="loop-progress"><div class="loop-progress-fill" id="loopProgressFill"></div></div>
+            <div class="monitor-row"><span>Última acción</span><span id="lastAction">Sin acciones</span></div>
         </div>
 
         <div class="terminal" id="terminal"></div>
@@ -433,6 +485,14 @@
                     <div class="liq-divider"></div>
                 </div>
             </div>
+
+            <div class="metric-card">
+                <h3>DECISION ENGINE</h3>
+                <div class="status" id="decisionStatus">WAITING SIGNAL</div>
+                <div class="decision-main" id="decisionMain">Sin decisión todavía.</div>
+                <div class="decision-reason" id="decisionReason">Activá el protocolo para ver decisiones en tiempo real y su explicación.</div>
+            </div>
+
         </div>
 
         <div class="singularity-container" id="singularityBox">
@@ -493,7 +553,12 @@
         btcPrice: null,
         btcVelocity: 0,
         crossShock: false,
-        entropyBlocked: false
+        entropyBlocked: false,
+        protocolStartedAt: null,
+        decisionStatus: 'WAITING SIGNAL',
+        decisionMain: 'Sin decisión todavía.',
+        decisionReason: 'Activá el protocolo para ver decisiones en tiempo real y su explicación.',
+        lastAction: 'Sin acciones'
     };
 
     let previousRegime = state.regime;
@@ -503,8 +568,10 @@
         price: document.getElementById('mainPrice'),
         status: document.getElementById('connectStatus'),
         sessionTag: document.getElementById('sessionTag'),
-        startBtn: document.getElementById('startBtn'),
-        stopBtn: document.getElementById('stopBtn'),
+        protocolBtn: document.getElementById('protocolBtn'),
+        loopStage: document.getElementById('loopStage'),
+        loopProgressFill: document.getElementById('loopProgressFill'),
+        lastAction: document.getElementById('lastAction'),
         omegaVal: document.getElementById('omegaVal'),
         omegaText: document.getElementById('omegaText'),
         portfolioVal: document.getElementById('portfolioVal'),
@@ -526,7 +593,10 @@
         persistText: document.getElementById('persistText'),
         persistFill: document.getElementById('persistFill'),
         entropyVal: document.getElementById('entropyVal'),
-        btcStatus: document.getElementById('btcStatus')
+        btcStatus: document.getElementById('btcStatus'),
+        decisionStatus: document.getElementById('decisionStatus'),
+        decisionMain: document.getElementById('decisionMain'),
+        decisionReason: document.getElementById('decisionReason')
     };
 
     const canvas = document.getElementById('nexus');
@@ -621,6 +691,49 @@
         }).format(n);
     }
 
+
+    const STORAGE_KEY = 'xrp-omega-state-v2';
+
+    function saveState() {
+        const data = {
+            active: state.active,
+            balanceXRP: state.balanceXRP,
+            balanceUSDT: state.balanceUSDT,
+            lastTradeTime: state.lastTradeTime,
+            protocolStartedAt: state.protocolStartedAt
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadState() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const data = JSON.parse(raw);
+            state.active = Boolean(data.active);
+            state.balanceXRP = Number.isFinite(data.balanceXRP) ? data.balanceXRP : state.balanceXRP;
+            state.balanceUSDT = Number.isFinite(data.balanceUSDT) ? data.balanceUSDT : state.balanceUSDT;
+            state.lastTradeTime = Number.isFinite(data.lastTradeTime) ? data.lastTradeTime : 0;
+            state.protocolStartedAt = Number.isFinite(data.protocolStartedAt) ? data.protocolStartedAt : null;
+        } catch (error) {
+            console.warn('state restore error', error);
+        }
+    }
+
+    function setLoopStage(label, progress) {
+        els.loopStage.textContent = label;
+        els.loopProgressFill.style.width = `${clamp(progress, 0, 100)}%`;
+    }
+
+    function setDecision(status, main, reason) {
+        state.decisionStatus = status;
+        state.decisionMain = main;
+        state.decisionReason = reason;
+        els.decisionStatus.textContent = status;
+        els.decisionMain.textContent = main;
+        els.decisionReason.textContent = reason;
+    }
+
     function updateSessionTag() {
         if (state.active) {
             els.sessionTag.textContent = 'EXECUTING';
@@ -628,12 +741,17 @@
             els.status.textContent = 'LIVE LOOP // EXECUTING';
             els.status.style.color = '#ccff00';
             els.status.style.borderColor = '#ccff00';
+            els.protocolBtn.textContent = 'FINALIZAR PROTOCOLO';
+            els.protocolBtn.classList.add('stop');
         } else {
             els.sessionTag.textContent = 'STANDBY';
             els.sessionTag.classList.remove('executing');
             els.status.textContent = 'STANDBY // NO EXECUTION';
             els.status.style.color = '#777';
             els.status.style.borderColor = '#333';
+            els.protocolBtn.textContent = 'ACTIVAR PROTOCOLO';
+            els.protocolBtn.classList.remove('stop');
+            setLoopStage('Esperando activación', 0);
         }
     }
 
@@ -957,7 +1075,10 @@
 
         flashExecution('buy');
         showTradeMarker('buy');
+        state.lastAction = `BUY ${netXRP.toFixed(2)} XRP`;
+        els.lastAction.textContent = state.lastAction;
         log(`BUY @ ${fillPrice.toFixed(4)} | Fee ${feeXRP.toFixed(4)} XRP | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'ai');
+        saveState();
     }
 
     function executeSell() {
@@ -978,13 +1099,33 @@
 
         flashExecution('sell');
         showTradeMarker('sell');
+        state.lastAction = `SELL ${sellXRP.toFixed(2)} XRP`;
+        els.lastAction.textContent = state.lastAction;
         log(`SELL @ ${fillPrice.toFixed(4)} | Fee ${feeUSDT.toFixed(4)} USDT | XRP ${state.balanceXRP.toFixed(4)} | USDT ${state.balanceUSDT.toFixed(4)}`, 'warn');
+        saveState();
     }
 
     function runTradingLogic() {
-        if (!state.active) return;
-        if (state.crossShock || state.entropyBlocked || state.persistenceProb <= 0.60) {
+        if (!state.active) {
+            setDecision('STANDBY', 'Protocolo inactivo', 'El motor está en espera. Activá el protocolo para ejecutar decisiones.');
+            return;
+        }
+
+        if (state.crossShock) {
             state.omegaConfirm = 0;
+            setDecision('BLOCKED', 'Sin ejecución por shock de BTC', 'El movimiento de BTC superó el umbral y se pausó la operativa para evitar contagio.');
+            return;
+        }
+
+        if (state.entropyBlocked) {
+            state.omegaConfirm = 0;
+            setDecision('BLOCKED', 'Sin ejecución por alta entropía', 'Flujo de mercado demasiado caótico (H > 0.80). Se evita operar sin señal clara.');
+            return;
+        }
+
+        if (state.persistenceProb <= 0.60) {
+            state.omegaConfirm = 0;
+            setDecision('WAIT', 'Esperando persistencia de régimen', `Probabilidad de persistencia ${(state.persistenceProb * 100).toFixed(0)}% aún baja.`);
             return;
         }
 
@@ -995,27 +1136,36 @@
         if (avgVol > 0.008) {
             log('VOLATILITY SPIKE — EXECUTION PAUSED', 'warn');
             state.omegaConfirm = 0;
+            setDecision('BLOCKED', 'Volatilidad fuera de rango', 'El promedio de velocidad de precio excede el límite operativo definido.');
             return;
         }
 
         if (Date.now() - state.lastTradeTime < 15000) {
+            setDecision('COOLDOWN', 'Cooling down', 'Se respeta una pausa mínima de 15s entre operaciones para evitar overtrading.');
             return;
         }
 
         if (state.omega > 85 || state.omega < 15) {
             state.omegaConfirm += 1;
+            setDecision('TRACKING', `Confirmando señal (${state.omegaConfirm}/2)`, `Omega ${state.omega.toFixed(2)} en zona extrema. Validando continuidad de señal.`);
         } else {
             state.omegaConfirm = 0;
+            setDecision('WAIT', 'Sin señal extrema', `Omega ${state.omega.toFixed(2)} en zona neutra. No se justifica ejecución.`);
             return;
         }
 
         if (state.omegaConfirm < 2) return;
 
         if (state.omega > 85 && state.balanceUSDT > 0) {
+            setDecision('ACTION', 'Ejecución BUY', `Omega ${state.omega.toFixed(2)} + USDT disponible => conversión a XRP.`);
             executeBuy();
             state.omegaConfirm = 0;
         } else if (state.omega < 15 && state.balanceXRP > 0) {
+            setDecision('ACTION', 'Ejecución SELL', `Omega ${state.omega.toFixed(2)} + XRP disponible => cobertura parcial en USDT.`);
             executeSell();
+            state.omegaConfirm = 0;
+        } else {
+            setDecision('WAIT', 'Señal válida sin inventario', 'La señal existe, pero no hay saldo compatible para ejecutar.');
             state.omegaConfirm = 0;
         }
     }
@@ -1027,37 +1177,43 @@
 
     async function dataLoop() {
         try {
+            setLoopStage('Sincronizando trades', 15);
             await fetchTrades();
+            setLoopStage('Analizando order book', 35);
             await fetchOrderBook();
+            setLoopStage('Correlación BTC', 55);
             await fetchBTC();
+            setLoopStage('Calculando Omega + filtros', 70);
             computeOmega();
             applyExecutionGates();
+            setLoopStage('Motor de decisiones', 85);
             runTradingLogic();
             updateOmegaUI();
             updatePortfolioUI();
+            setLoopStage('Ciclo completado', 100);
 
             state.loopCount += 1;
             if (state.loopCount % 5 === 0) heartbeat();
         } catch (e) {
             log(`DATA LOOP WARNING: ${e.message}`, 'warn');
+            setLoopStage('Error de datos', 100);
         }
     }
 
     function bindControls() {
-        els.startBtn.addEventListener('click', () => {
-            state.active = true;
+        els.protocolBtn.addEventListener('click', () => {
+            state.active = !state.active;
+            if (state.active && !state.protocolStartedAt) {
+                state.protocolStartedAt = Date.now();
+            }
             updateSessionTag();
-            log('OMEGA PROTOCOL ACTIVATED', 'ai');
-        });
-
-        els.stopBtn.addEventListener('click', () => {
-            state.active = false;
-            updateSessionTag();
-            log('SESSION TERMINATED // STANDBY', 'normal');
+            saveState();
+            log(state.active ? 'OMEGA PROTOCOL ACTIVATED' : 'SESSION TERMINATED // STANDBY', state.active ? 'ai' : 'normal');
         });
     }
 
     function init() {
+        loadState();
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
         drawNexus();
@@ -1065,8 +1221,14 @@
         updateSessionTag();
         updateRegimeUI();
         updateLiquidityBar();
+        updatePortfolioUI();
+        els.lastAction.textContent = state.lastAction;
+        setDecision(state.decisionStatus, state.decisionMain, state.decisionReason);
         log('SIMULATION ONLY // NO REAL TRADING', 'normal');
         log('PUBLIC BINANCE DATA LINK ONLINE', 'normal');
+        if (state.active) {
+            log('PROTOCOLO RESTAURADO DESDE SESIÓN PREVIA', 'ai');
+        }
 
         dataLoop();
         setInterval(dataLoop, 4000);
