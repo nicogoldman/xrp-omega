@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>XRP OMEGA | Live Microstructure Simulator</title>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' font-family='sans-serif' fill='%2300f3ff'>X</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23020204'/%3E%3Cpath d='M9 17c6.7 0 10.2 5.4 15.1 10.2 4.2 4.1 6.6 6.2 7.9 6.2s3.7-2.1 7.9-6.2C44.8 22.4 48.3 17 55 17' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/%3E%3Cpath d='M9 47c6.7 0 10.2-5.4 15.1-10.2 4.2-4.1 6.6-6.2 7.9-6.2s3.7 2.1 7.9 6.2C44.8 41.6 48.3 47 55 47' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
     <style>
         :root {
             --void: #020204;
@@ -184,20 +184,31 @@
         }
 
         .terminal {
-            min-height: 170px;
+            height: 220px;
+            max-height: 220px;
             background: rgba(5, 5, 5, 0.95);
             border: 1px solid #222;
             padding: 15px;
             font-size: 0.72rem;
-            overflow: hidden;
-            display: flex; flex-direction: column-reverse;
+            overflow-y: auto;
+            overflow-x: hidden;
             border-left: 3px solid var(--acid);
             position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,243,255,0.55) rgba(255,255,255,0.08);
+            contain: content;
         }
 
         .terminal::before {
             content: "SYSTEM LOG // MICROSTRUCTURE";
             position: absolute; top: 5px; right: 10px; font-size: 0.6rem; color: #444;
+        }
+
+        .terminal::-webkit-scrollbar { width: 8px; }
+        .terminal::-webkit-scrollbar-track { background: rgba(255,255,255,0.08); }
+        .terminal::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(0,243,255,0.55), rgba(204,255,0,0.65));
+            border-radius: 8px;
         }
 
         .log-line { margin-bottom: 4px; padding-left: 10px; opacity: 0; animation: fadeIn 0.3s forwards; }
@@ -677,10 +688,11 @@
         const div = document.createElement('div');
         div.className = `log-line ${type}`;
         div.innerText = msg;
-        els.term.prepend(div);
+        els.term.appendChild(div);
         if (els.term.children.length > 18) {
-            els.term.lastChild.remove();
+            els.term.firstChild.remove();
         }
+        els.term.scrollTop = els.term.scrollHeight;
     }
 
     function formatUSD(n) {
