@@ -217,7 +217,7 @@
         .log-line.warn { color: var(--danger); }
         .log-line.normal { color: #aaa; }
 
-        .main-deck { display: grid; grid-template-rows: auto 1fr auto; gap: 20px; }
+        /* .main-deck rows definidos en bloque anterior (auto auto 1fr auto) */
 
         .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; }
         .metric-card {
@@ -414,6 +414,62 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
 
+        /* ── Rolling Window Metrics Bar ───────────────────────────────────── */
+        .window-metrics-bar {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            background: rgba(0, 0, 0, 0.55);
+            border: 1px solid rgba(0, 243, 255, 0.12);
+            border-left: 3px solid rgba(0, 243, 255, 0.4);
+            padding: 8px 16px;
+            flex-wrap: wrap;
+        }
+
+        .wm-label-title {
+            font-size: 0.58rem;
+            letter-spacing: 2px;
+            color: #555;
+            text-transform: uppercase;
+            padding-right: 16px;
+            border-right: 1px solid #222;
+            margin-right: 16px;
+            white-space: nowrap;
+        }
+
+        .wm-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 14px;
+            border-right: 1px solid #1a1a1a;
+        }
+
+        .wm-item:last-child { border-right: none; }
+
+        .wm-label {
+            font-size: 0.55rem;
+            color: #555;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .wm-val {
+            font-size: 0.78rem;
+            color: #8a8a8a;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .wm-warmup-badge {
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            background: rgba(0, 243, 255, 0.05);
+            padding: 2px 10px;
+            border-right: none;
+        }
+
+        .main-deck { display: grid; grid-template-rows: auto auto 1fr auto; gap: 20px; }
+
         @media (max-width: 1100px) {
             .layout { grid-template-columns: 1fr; height: auto; display: flex; flex-direction: column; }
             .metrics-grid { grid-template-columns: repeat(2, 1fr); }
@@ -459,6 +515,11 @@
             <div class="monitor-row"><span>Estado de ciclo</span><span id="loopStage">Esperando activación</span></div>
             <div class="loop-progress"><div class="loop-progress-fill" id="loopProgressFill"></div></div>
             <div class="monitor-row"><span>Última acción</span><span id="lastAction">Sin acciones</span></div>
+            <div class="monitor-title" style="margin-top:6px; color:#555; font-size:0.58rem;">ADAPTIVE THRESHOLDS</div>
+            <div class="monitor-row"><span>Entropy thr</span><span id="adaptEntropyThr" style="color:#8a8a8a">0.80</span></div>
+            <div class="monitor-row"><span>Vol thr</span><span id="adaptVolThr" style="color:#8a8a8a">0.0080</span></div>
+            <div class="monitor-row"><span>Ω zone H/L</span><span id="adaptOmegaZone" style="color:#8a8a8a">85 / 15</span></div>
+            <div class="monitor-row"><span>Cooldown</span><span id="adaptCooldown" style="color:#8a8a8a">15s</span></div>
         </div>
 
         <div class="terminal" id="terminal"></div>
@@ -506,6 +567,35 @@
 
         </div>
 
+        <!-- ── Rolling Window Metrics Bar (~10 min) ─────────────────────── -->
+        <div class="window-metrics-bar">
+            <div class="wm-label-title">WINDOW 10m</div>
+            <div class="wm-item">
+                <span class="wm-label">HIT RATIO</span>
+                <span class="wm-val" id="wmHitRatio">—</span>
+            </div>
+            <div class="wm-item">
+                <span class="wm-label">WIN ALPHA</span>
+                <span class="wm-val" id="wmAlpha">$0.00</span>
+            </div>
+            <div class="wm-item">
+                <span class="wm-label">WIN DD</span>
+                <span class="wm-val" id="wmDD">0.00%</span>
+            </div>
+            <div class="wm-item">
+                <span class="wm-label">TRADES</span>
+                <span class="wm-val" id="wmTrades">0</span>
+            </div>
+            <div class="wm-item">
+                <span class="wm-label">SAMPLES</span>
+                <span class="wm-val" id="wmSamples">0/150</span>
+            </div>
+            <div class="wm-item wm-warmup-badge" id="wmWarmup" style="display:none">
+                <span class="wm-label">WARM-UP</span>
+                <span class="wm-val" id="wmWarmupPct" style="color:#00f3ff">0%</span>
+            </div>
+        </div>
+
         <div class="singularity-container" id="singularityBox">
             <canvas id="nexus"></canvas>
             <div class="trade-marker" id="tradeMarker">+ BUY</div>
@@ -529,6 +619,23 @@
 <script>
     const FEE_RATE = 0.001;
     const SLIPPAGE = 0.0002;
+
+    // ── Warm-up: primeros ciclos con ventanas vacías son poco confiables ───────
+    const WARMUP_CYCLES = 12;  // ~48 s a 4 s/ciclo
+
+    // ── Rolling-window metrics: ventana de ~10 min ────────────────────────────
+    const WINDOW_CYCLES = 150; // 150 × 4 s = 600 s = 10 min
+
+    // ── Umbrales por defecto (hard) y objeto adaptativo (mutable) ────────────
+    const THRESH_DEFAULTS = {
+        entropy:   0.80,
+        vol:       0.008,
+        omegaHigh: 85,
+        omegaLow:  15,
+        persist:   0.60,
+        cooldown:  15000
+    };
+    const adaptiveThresholds = { ...THRESH_DEFAULTS };
 
     const state = {
         price: 0,
@@ -569,7 +676,10 @@
         decisionStatus: 'WAITING SIGNAL',
         decisionMain: 'Sin decisión todavía.',
         decisionReason: 'Activá el protocolo para ver decisiones en tiempo real y su explicación.',
-        lastAction: 'Sin acciones'
+        lastAction: 'Sin acciones',
+        // rolling-window snapshots & per-cycle trade tracker
+        windowSnapshots: [],
+        cycleTradeType: null
     };
 
     let previousRegime = state.regime;
@@ -607,7 +717,20 @@
         btcStatus: document.getElementById('btcStatus'),
         decisionStatus: document.getElementById('decisionStatus'),
         decisionMain: document.getElementById('decisionMain'),
-        decisionReason: document.getElementById('decisionReason')
+        decisionReason: document.getElementById('decisionReason'),
+        // adaptive thresholds display
+        adaptEntropyThr: document.getElementById('adaptEntropyThr'),
+        adaptVolThr:     document.getElementById('adaptVolThr'),
+        adaptOmegaZone:  document.getElementById('adaptOmegaZone'),
+        adaptCooldown:   document.getElementById('adaptCooldown'),
+        // rolling window metrics
+        wmHitRatio:  document.getElementById('wmHitRatio'),
+        wmAlpha:     document.getElementById('wmAlpha'),
+        wmDD:        document.getElementById('wmDD'),
+        wmTrades:    document.getElementById('wmTrades'),
+        wmSamples:   document.getElementById('wmSamples'),
+        wmWarmup:    document.getElementById('wmWarmup'),
+        wmWarmupPct: document.getElementById('wmWarmupPct')
     };
 
     const canvas = document.getElementById('nexus');
@@ -911,6 +1034,130 @@
         updateBTCStatusUI();
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // ADAPTIVE THRESHOLDS
+    // Cada ciclo se recalculan a partir de las distribuciones observadas.
+    // ─────────────────────────────────────────────────────────────────────────
+    function updateAdaptiveThresholds() {
+        // Entropy: percentil 85 del historial de entropía (clamped 0.65–0.92)
+        if (state.entropyHistory.length >= 8) {
+            const s = [...state.entropyHistory].sort((a, b) => a - b);
+            const idx = Math.min(Math.floor(s.length * 0.85), s.length - 1);
+            adaptiveThresholds.entropy = clamp(s[idx], 0.65, 0.92);
+        }
+
+        // Vol: percentil 80 de velocidades de precio recientes (clamped 0.004–0.018)
+        if (state.volHistory.length >= 5) {
+            const s = [...state.volHistory].sort((a, b) => a - b);
+            const idx = Math.min(Math.floor(s.length * 0.80), s.length - 1);
+            adaptiveThresholds.vol = clamp(s[idx], 0.004, 0.018);
+        }
+
+        // Omega zones: percentiles 85/15 del historial de omega (clamped)
+        if (state.omegaHistory.length >= 10) {
+            const s = [...state.omegaHistory].sort((a, b) => a - b);
+            adaptiveThresholds.omegaHigh = clamp(s[Math.floor(s.length * 0.85)], 75, 92);
+            adaptiveThresholds.omegaLow  = clamp(s[Math.floor(s.length * 0.15)],  8, 25);
+        }
+
+        // Persistencia: más estricta en CHAOS, más laxa en TREND
+        adaptiveThresholds.persist  = state.regime === 'CHAOS' ? 0.70
+                                    : state.regime === 'TREND' ? 0.52
+                                    : 0.60;
+
+        // Cooldown: más largo en CHAOS (señales ruidosas), más corto en TREND
+        adaptiveThresholds.cooldown = state.regime === 'CHAOS' ? 25000
+                                    : state.regime === 'TREND' ? 10000
+                                    : 15000;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // ROLLING WINDOW METRICS (~10 min)
+    // ─────────────────────────────────────────────────────────────────────────
+    function getWindowMetrics() {
+        const snaps = state.windowSnapshots;
+        if (snaps.length < 5) return null;
+
+        const first = snaps[0];
+        const last  = snaps[snaps.length - 1];
+
+        // Alpha edge: variación de (portfolio − hold) durante la ventana
+        const alphaFirst  = first.portfolioValue - first.holdValue;
+        const alphaLast   = last.portfolioValue  - last.holdValue;
+        const windowAlpha = alphaLast - alphaFirst;
+
+        // Hit ratio: trade mejoró el alpha vs hold en los 5 ciclos siguientes
+        const tradeIdxs = snaps
+            .map((s, i) => (s.trade ? i : -1))
+            .filter(i => i >= 0);
+        let hits = 0;
+        for (const ti of tradeIdxs) {
+            const ahead  = Math.min(ti + 5, snaps.length - 1);
+            const before = snaps[ti].portfolioValue    - snaps[ti].holdValue;
+            const after  = snaps[ahead].portfolioValue - snaps[ahead].holdValue;
+            if (after > before) hits++;
+        }
+        const hitRatio = tradeIdxs.length > 0 ? hits / tradeIdxs.length : null;
+
+        // Drawdown intra-ventana
+        let peak = 0, windowDD = 0;
+        for (const s of snaps) {
+            if (s.portfolioValue > peak) peak = s.portfolioValue;
+            if (peak > 0) {
+                const dd = (s.portfolioValue - peak) / peak;
+                if (dd < windowDD) windowDD = dd;
+            }
+        }
+
+        return { hitRatio, windowAlpha, windowDrawdown: windowDD, tradeCount: tradeIdxs.length, sampleCount: snaps.length };
+    }
+
+    function updateWindowMetricsUI() {
+        // Warm-up indicator
+        if (state.loopCount < WARMUP_CYCLES) {
+            const pct = Math.round((state.loopCount / WARMUP_CYCLES) * 100);
+            if (els.wmWarmup) els.wmWarmup.style.display = 'flex';
+            if (els.wmWarmupPct) els.wmWarmupPct.textContent = `${pct}%`;
+        } else {
+            if (els.wmWarmup) els.wmWarmup.style.display = 'none';
+        }
+
+        const m = getWindowMetrics();
+        if (!m) {
+            if (els.wmHitRatio) els.wmHitRatio.textContent = '—';
+            if (els.wmAlpha)    els.wmAlpha.textContent    = '$0.00';
+            if (els.wmDD)       els.wmDD.textContent       = '0.00%';
+            if (els.wmTrades)   els.wmTrades.textContent   = '0';
+            if (els.wmSamples)  els.wmSamples.textContent  = `${state.windowSnapshots.length}/${WINDOW_CYCLES}`;
+            return;
+        }
+
+        const hrText = m.hitRatio !== null ? `${Math.round(m.hitRatio * 100)}%` : '—';
+        const hrColor = m.hitRatio === null ? '#888'
+                      : m.hitRatio >= 0.6 ? '#ccff00'
+                      : m.hitRatio >= 0.4 ? '#00f3ff'
+                      : '#ff2a6d';
+
+        const alphaSign  = m.windowAlpha >= 0 ? '+' : '';
+        const alphaColor = m.windowAlpha >= 0 ? '#ccff00' : '#ff2a6d';
+        const ddColor    = m.windowDrawdown > -0.01 ? '#ccff00'
+                         : m.windowDrawdown > -0.03 ? '#00f3ff'
+                         : '#ff2a6d';
+
+        if (els.wmHitRatio) { els.wmHitRatio.textContent = hrText;  els.wmHitRatio.style.color = hrColor; }
+        if (els.wmAlpha)    { els.wmAlpha.textContent = `${alphaSign}${formatUSD(m.windowAlpha)}`;  els.wmAlpha.style.color = alphaColor; }
+        if (els.wmDD)       { els.wmDD.textContent = `${(m.windowDrawdown * 100).toFixed(2)}%`;     els.wmDD.style.color = ddColor; }
+        if (els.wmTrades)   els.wmTrades.textContent  = String(m.tradeCount);
+        if (els.wmSamples)  els.wmSamples.textContent = `${m.sampleCount}/${WINDOW_CYCLES}`;
+    }
+
+    function updateAdaptiveThreshUI() {
+        if (els.adaptEntropyThr) els.adaptEntropyThr.textContent = adaptiveThresholds.entropy.toFixed(2);
+        if (els.adaptVolThr)     els.adaptVolThr.textContent     = adaptiveThresholds.vol.toFixed(4);
+        if (els.adaptOmegaZone)  els.adaptOmegaZone.textContent  = `${adaptiveThresholds.omegaHigh.toFixed(0)} / ${adaptiveThresholds.omegaLow.toFixed(0)}`;
+        if (els.adaptCooldown)   els.adaptCooldown.textContent   = `${(adaptiveThresholds.cooldown / 1000).toFixed(0)}s`;
+    }
+
     async function fetchTicker() {
         const res = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
         if (!res.ok) throw new Error('ticker error');
@@ -1066,7 +1313,8 @@
         if (state.entropyHistory.length > 20) state.entropyHistory.shift();
 
         const entropy = getEntropyValue();
-        state.entropyBlocked = entropy > 0.8;
+        // Umbral adaptativo (no fijo en 0.80)
+        state.entropyBlocked = entropy > adaptiveThresholds.entropy;
     }
 
     function executeBuy() {
@@ -1085,6 +1333,7 @@
         state.position = state.balanceUSDT > 0.0000001 ? 'MIXED' : 'XRP';
         state.lastTradeTime = Date.now();
 
+        state.cycleTradeType = 'buy';
         flashExecution('buy');
         showTradeMarker('buy');
         state.lastAction = `BUY ${netXRP.toFixed(2)} XRP`;
@@ -1109,6 +1358,7 @@
         state.position = state.balanceXRP > 0.0000001 ? 'MIXED' : 'USDT';
         state.lastTradeTime = Date.now();
 
+        state.cycleTradeType = 'sell';
         flashExecution('sell');
         showTradeMarker('sell');
         state.lastAction = `SELL ${sellXRP.toFixed(2)} XRP`;
@@ -1123,6 +1373,21 @@
             return;
         }
 
+        // ── WARM-UP GUARD ─────────────────────────────────────────────────────
+        // Los primeros WARMUP_CYCLES ciclos las ventanas históricas están vacías.
+        // Las decisiones en este período son poco confiables — se omiten.
+        if (state.loopCount < WARMUP_CYCLES) {
+            const pct = Math.round((state.loopCount / WARMUP_CYCLES) * 100);
+            state.omegaConfirm = 0;
+            setDecision(
+                'WARMUP',
+                `Calentando ventanas de datos (${pct}%)`,
+                `Ciclo ${state.loopCount + 1}/${WARMUP_CYCLES}. Historial insuficiente — umbrales adaptativos aún no calibrados. Esperá unos segundos.`
+            );
+            return;
+        }
+
+        // ── FILTROS DE EJECUCIÓN ──────────────────────────────────────────────
         if (state.crossShock) {
             state.omegaConfirm = 0;
             setDecision('BLOCKED', 'Sin ejecución por shock de BTC', 'El movimiento de BTC superó el umbral y se pausó la operativa para evitar contagio.');
@@ -1131,49 +1396,54 @@
 
         if (state.entropyBlocked) {
             state.omegaConfirm = 0;
-            setDecision('BLOCKED', 'Sin ejecución por alta entropía', 'Flujo de mercado demasiado caótico (H > 0.80). Se evita operar sin señal clara.');
+            setDecision('BLOCKED', `Sin ejecución — entropía alta (thr: ${adaptiveThresholds.entropy.toFixed(2)})`, 'Flujo de mercado demasiado caótico. Se evita operar sin señal clara.');
             return;
         }
 
-        if (state.persistenceProb <= 0.60) {
+        // Persistencia adaptativa según régimen
+        if (state.persistenceProb <= adaptiveThresholds.persist) {
             state.omegaConfirm = 0;
-            setDecision('WAIT', 'Esperando persistencia de régimen', `Probabilidad de persistencia ${(state.persistenceProb * 100).toFixed(0)}% aún baja.`);
+            setDecision('WAIT', 'Esperando persistencia de régimen', `P(persist) ${(state.persistenceProb * 100).toFixed(0)}% < umbral adaptativo ${(adaptiveThresholds.persist * 100).toFixed(0)}% [${state.regime}].`);
             return;
         }
 
+        // Volatilidad adaptativa
         const avgVol = state.volHistory.length
             ? state.volHistory.reduce((sum, v) => sum + v, 0) / state.volHistory.length
             : 0;
-
-        if (avgVol > 0.008) {
-            log('VOLATILITY SPIKE — EXECUTION PAUSED', 'warn');
+        if (avgVol > adaptiveThresholds.vol) {
+            log(`VOLATILITY SPIKE — thr ${adaptiveThresholds.vol.toFixed(4)} [adapt]`, 'warn');
             state.omegaConfirm = 0;
-            setDecision('BLOCKED', 'Volatilidad fuera de rango', 'El promedio de velocidad de precio excede el límite operativo definido.');
+            setDecision('BLOCKED', `Volatilidad fuera de rango (thr: ${adaptiveThresholds.vol.toFixed(4)})`, 'Promedio de velocidad de precio supera límite operativo adaptativo.');
             return;
         }
 
-        if (Date.now() - state.lastTradeTime < 15000) {
-            setDecision('COOLDOWN', 'Cooling down', 'Se respeta una pausa mínima de 15s entre operaciones para evitar overtrading.');
+        // Cooldown adaptativo según régimen
+        const cooldownMs = adaptiveThresholds.cooldown;
+        if (Date.now() - state.lastTradeTime < cooldownMs) {
+            setDecision('COOLDOWN', `Cooling down (${(cooldownMs / 1000).toFixed(0)}s — ${state.regime})`, 'Pausa mínima adaptativa entre operaciones para evitar overtrading.');
             return;
         }
 
-        if (state.omega > 85 || state.omega < 15) {
+        // ── ZONA OMEGA ADAPTATIVA ─────────────────────────────────────────────
+        if (state.omega > adaptiveThresholds.omegaHigh || state.omega < adaptiveThresholds.omegaLow) {
             state.omegaConfirm += 1;
-            setDecision('TRACKING', `Confirmando señal (${state.omegaConfirm}/2)`, `Omega ${state.omega.toFixed(2)} en zona extrema. Validando continuidad de señal.`);
+            setDecision('TRACKING', `Confirmando señal (${state.omegaConfirm}/2)`, `Omega ${state.omega.toFixed(2)} en zona extrema adaptativa [${adaptiveThresholds.omegaLow.toFixed(0)}–${adaptiveThresholds.omegaHigh.toFixed(0)}]. Validando continuidad.`);
         } else {
             state.omegaConfirm = 0;
-            setDecision('WAIT', 'Sin señal extrema', `Omega ${state.omega.toFixed(2)} en zona neutra. No se justifica ejecución.`);
+            setDecision('WAIT', 'Sin señal extrema', `Omega ${state.omega.toFixed(2)} en zona neutra. Zona de señal: <${adaptiveThresholds.omegaLow.toFixed(0)} o >${adaptiveThresholds.omegaHigh.toFixed(0)}.`);
             return;
         }
 
         if (state.omegaConfirm < 2) return;
 
-        if (state.omega > 85 && state.balanceUSDT > 0) {
-            setDecision('ACTION', 'Ejecución BUY', `Omega ${state.omega.toFixed(2)} + USDT disponible => conversión a XRP.`);
+        // ── EJECUCIÓN ─────────────────────────────────────────────────────────
+        if (state.omega > adaptiveThresholds.omegaHigh && state.balanceUSDT > 0) {
+            setDecision('ACTION', 'Ejecución BUY', `Omega ${state.omega.toFixed(2)} > ${adaptiveThresholds.omegaHigh.toFixed(0)} + USDT disponible => conversión a XRP.`);
             executeBuy();
             state.omegaConfirm = 0;
-        } else if (state.omega < 15 && state.balanceXRP > 0) {
-            setDecision('ACTION', 'Ejecución SELL', `Omega ${state.omega.toFixed(2)} + XRP disponible => cobertura parcial en USDT.`);
+        } else if (state.omega < adaptiveThresholds.omegaLow && state.balanceXRP > 0) {
+            setDecision('ACTION', 'Ejecución SELL', `Omega ${state.omega.toFixed(2)} < ${adaptiveThresholds.omegaLow.toFixed(0)} + XRP disponible => cobertura parcial en USDT.`);
             executeSell();
             state.omegaConfirm = 0;
         } else {
@@ -1188,6 +1458,7 @@
     }
 
     async function dataLoop() {
+        state.cycleTradeType = null; // reset por ciclo
         try {
             setLoopStage('Sincronizando trades', 15);
             await fetchTrades();
@@ -1195,13 +1466,28 @@
             await fetchOrderBook();
             setLoopStage('Correlación BTC', 55);
             await fetchBTC();
-            setLoopStage('Calculando Omega + filtros', 70);
+            setLoopStage('Calculando Omega + filtros adaptativos', 70);
             computeOmega();
+            updateAdaptiveThresholds();   // recalibrar umbrales adaptativos
             applyExecutionGates();
             setLoopStage('Motor de decisiones', 85);
             runTradingLogic();
             updateOmegaUI();
             updatePortfolioUI();
+
+            // ── Rolling-window snapshot ──────────────────────────────────────
+            state.windowSnapshots.push({
+                time:           Date.now(),
+                portfolioValue: getPortfolioValueUSD(),
+                holdValue:      state.holdValue,
+                trade:          state.cycleTradeType
+            });
+            if (state.windowSnapshots.length > WINDOW_CYCLES) state.windowSnapshots.shift();
+
+            // ── Actualizar UIs adicionales ───────────────────────────────────
+            updateWindowMetricsUI();
+            updateAdaptiveThreshUI();
+
             setLoopStage('Ciclo completado', 100);
 
             state.loopCount += 1;
